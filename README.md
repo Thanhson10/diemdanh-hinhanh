@@ -93,7 +93,7 @@ Tạo file môi trường
 cp .env.example .env
 
 Mở file .env và cấu hình:
-DB_DATABASE=attendance
+DB_DATABASE=name_database
 DB_USERNAME=root
 DB_PASSWORD=
 
@@ -106,6 +106,10 @@ AWS_COLLECTION_ID=your_collection_id
 Generate key
 
 php artisan key:generate
+
+Setup database
+
+php artisan migrate
 
 Chạy project
 
@@ -123,5 +127,6 @@ The following environment variables are required:
 
 ## Tác giả
 
-Nguyễn Hùng Thanh Sơn 
+Nguyễn Hùng Thanh Sơn
+
 Sinh viên ngành Công nghệ Thông tin
