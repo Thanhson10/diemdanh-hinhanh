@@ -1,61 +1,127 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Face Recognition Attendance System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Hệ thống điểm danh sinh viên bằng nhận diện khuôn mặt sử dụng Laravel và AWS Rekognition.
 
-## About Laravel
+## Giới thiệu
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Đây là hệ thống điểm danh sinh viên bằng công nghệ nhận diện khuôn mặt.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Hệ thống cho phép:
+- Quản lý sinh viên
+- Quản lý giảng viên
+- Quản lý lịch thi
+- Phân công gác thi
+- Train khuôn mặt sinh viên
+- Điểm danh bằng hình ảnh
+- Lưu lịch sử điểm danh
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Công nghệ sử dụng
 
-## Learning Laravel
+- PHP
+- Laravel
+- MySQL
+- Bootstrap
+- AWS S3
+- AWS Rekognition
+- AWS SDK for PHP
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Kiến trúc hệ thống
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+1. Ảnh sinh viên được upload lên hệ thống
+2. Ảnh được lưu trữ trên AWS S3
+3. AWS Rekognition sử dụng IndexFaces để lưu vector khuôn mặt
+4. Khi điểm danh, ảnh mới được gửi lên Rekognition
+5. Rekognition sử dụng SearchFacesByImage để so khớp khuôn mặt
+6. Kết quả được lưu vào database
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Chức năng chính
 
-## Laravel Sponsors
+### Admin
+- Quản lý sinh viên
+- Train khuôn mặt sinh viên
+- Quản lý phòng thi
+- Phân công giám thi gác thi
+- Xem lịch sử điểm danh
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Giảng viên
+- Điểm danh cho sinh viên bằng nhận diện khuôn mặt
 
-### Premium Partners
+## Demo
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Website:  
+https://sonnguyenhungthanh.io.vn
 
-## Contributing
+Tài khoản demo:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Admin  
+email: test@gmail.com  
+password: 123123
 
-## Code of Conduct
+Giảng viên
+email: bb@gmail.com
+password: 111111
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Hình ảnh hệ thống
 
-## Security Vulnerabilities
+### Trang chủ
+![Home](public/images/home.png)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Dashboard Admin
+![Dashboard](public/images/dashboard.png)
 
-## License
+### TrainImages
+![Train](public/images/train.png)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Quản lý sinh viên
+![Students](public/images/students.png)
+
+### Kết quả điểm danh
+![Result](public/images/result.png)
+
+## Cài đặt project
+
+Clone project
+
+git clone https://github.com/Thanhson10/diemdanh-hinhanh.git
+
+Cài đặt thư viện
+
+composer install
+
+Tạo file môi trường
+
+cp .env.example .env
+
+Mở file .env và cấu hình:
+DB_DATABASE=attendance
+DB_USERNAME=root
+DB_PASSWORD=
+
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_DEFAULT_REGION=ap-southeast-1
+AWS_BUCKET=your_bucket_name
+AWS_COLLECTION_ID=your_collection_id
+
+Generate key
+
+php artisan key:generate
+
+Chạy project
+
+php artisan serve
+
+## Environment Variables
+
+The following environment variables are required:
+
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+- AWS_DEFAULT_REGION
+- AWS_BUCKET
+- AWS_COLLECTION_ID
+
+## Tác giả
+
+Nguyễn Hùng Thanh Sơn 
+Sinh viên ngành Công nghệ Thông tin
