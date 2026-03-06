@@ -116,7 +116,9 @@ php artisan key:generate
 
 Setup database
 
-php artisan migrate
+php artisan migrate 
+
+Hoặc dùng MySQL import file diemdanh_sv.sql
 
 Chạy project
 
