@@ -93,15 +93,22 @@ Tạo file môi trường
 cp .env.example .env
 
 Mở file .env và cấu hình:
--DB_DATABASE=name_database
--DB_USERNAME=root
--DB_PASSWORD=
 
--AWS_ACCESS_KEY_ID=your_access_key
--AWS_SECRET_ACCESS_KEY=your_secret_key
--AWS_DEFAULT_REGION=ap-southeast-1
--AWS_BUCKET=your_bucket_name
--AWS_COLLECTION_ID=your_collection_id
+DB_DATABASE=name_database
+
+DB_USERNAME=root
+
+DB_PASSWORD=
+
+AWS_ACCESS_KEY_ID=your_access_key
+
+AWS_SECRET_ACCESS_KEY=your_secret_key
+
+AWS_DEFAULT_REGION=ap-southeast-1
+
+AWS_BUCKET=your_bucket_name
+
+AWS_COLLECTION_ID=your_collection_id
 
 Generate key
 
