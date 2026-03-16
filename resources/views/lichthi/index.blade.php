@@ -193,13 +193,13 @@
             </tr>
             @endforeach
         </tbody>
-        <!-- @if(Auth::user()->vai_tro === 'admin')
+        {{-- @if(Auth::user()->vai_tro === 'admin')
         <form action="{{ route('lichthi.import') }}" method="POST" enctype="multipart/form-data" class="mb-3">
             @csrf
             <input type="file" name="file" accept=".xlsx,.xls,.csv" required>
             <button type="submit" class="btn btn-success">Import Excel</button>
         </form>
-        @endif -->
+        @endif  --}}
     </table>
 
     <div class="d-flex justify-content-center">
