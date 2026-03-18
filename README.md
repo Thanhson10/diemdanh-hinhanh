@@ -75,6 +75,10 @@ password: 111111
 ### Quản lý sinh viên
 ![Students](public/images/students.png)
 
+### Thực hiện điểm danh sinh viên
+![Thông tin phòng thi](public/images/phongthi.png)
+![Thực hiện điểm danh](public/images/diemdanh.png)
+
 ### Kết quả điểm danh
 ![Result](public/images/result.png)
 
