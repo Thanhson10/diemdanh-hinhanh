@@ -96,10 +96,23 @@ class GiangVienController extends Controller
     }
 
     public function destroy($id)
-    {
-        $giangvien = GiangVien::findOrFail($id);
-        $giangvien->delete();
-        return redirect()->route('giangvien.index')->with('success', 'Xóa giảng viên thành công!');
+   {
+        try {
+            $giangVien = GiangVien::findOrFail($id);
+
+            // KIỂM TRA: Nếu giảng viên đã có phân công -> CHẶN LẠI VÀ BÁO LỖI
+            if ($giangVien->phanCongGVs()->exists()) {
+                return redirect()->back()->with('error', 'Không thể xóa giảng viên này vì họ có lịch sử phân công coi thi!');
+            }
+
+            // Nếu chưa có phân công nào thì mới cho phép xóa
+            $giangVien->delete();
+
+            return redirect()->back()->with('success', 'Xóa giảng viên thành công!');
+            
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Lỗi: ' . $e->getMessage());
+        }
     }
 
     public function import(Request $request)

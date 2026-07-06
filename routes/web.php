@@ -42,7 +42,7 @@ Route::middleware('auth:giangvien')->group(function () {
     //Trang upload khuôn mặt sinh viên
     Route::get('/rekognition/upload', [RekognitionController::class, 'uploadForm'])->name('rekognition.uploadForm');
     Route::post('/rekognition/upload', [RekognitionController::class, 'train'])->name('rekognition.train');
-    Route::delete('/rekognition/delete/{studentId}', [RekognitionController::class, 'deleteStudent'])->name('rekognition.delete');
+    Route::delete('/rekognition/delete/{studentId}', [RekognitionController::class, 'deleteFace'])->name('rekognition.delete');
     Route::get('/rekognition/delete', function () {
     return view('rekognition.delete');})->name('rekognition.delete.form');
 

@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     /* -------------------------
-       Adaptive Live Detection - GIỮ NGUYÊN
+       Adaptive Live Detection 
     ------------------------- */
     function startLiveDetection() {
         console.log('🚀 Bắt đầu live detection với interval:', DETECT_INTERVAL_MS);
@@ -744,7 +744,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ctx.stroke();
 
             const labelIndex = String(idx + 1);
-            const name = face.name || 'Unknown';
+            const name = face.name || face.reason || 'Unknown';
             const sim = (typeof face.similarity === 'number') ? (face.similarity.toFixed(1) + '%') : '';
             const label = `${labelIndex} ${name} ${sim}`.trim();
 
@@ -879,7 +879,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const form = new FormData();
         form.append('faces', JSON.stringify(selected));
-        form.append('hinh_anh_base64', capturedBase64);
+        //form.append('hinh_anh_base64', capturedBase64);
         form.append('lich_thi_id', '{{ $lichThi->id }}');
         form.append('_token', '{{ csrf_token() }}');
 

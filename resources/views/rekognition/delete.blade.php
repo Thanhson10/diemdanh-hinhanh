@@ -11,10 +11,12 @@
     @if (session('error'))
         <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
-    <a href="{{ route('home.index') }}" class="btn btn-secondary mt-2">Trở về</a>
+    
+    <a href="{{ route('home.index') }}" class="btn btn-secondary mt-2 mb-3">Trở về</a>
+    
     <div class="card shadow">
         <div class="card-header bg-danger text-white">
-            <h4>Xóa dữ liệu sinh viên khỏi Rekognition & S3</h4>
+            <h4 class="mb-0">Xóa dữ liệu sinh viên khỏi Rekognition & S3</h4>
         </div>
 
         <div class="card-body">
@@ -24,12 +26,12 @@
                 @method('DELETE')
 
                 <div class="form-group mb-3">
-                    <label for="studentId">Mã số sinh viên (MSSV)</label>
-                    <input type="text" id="studentId" name="studentId" class="form-control" placeholder="Nhập MSSV..." required>
+                    <label for="studentId" class="fw-bold">Mã số sinh viên (MSSV)</label>
+                    <input type="text" id="studentId" class="form-control" placeholder="Nhập MSSV" required autocomplete="off">
                 </div>
 
                 <button type="submit" class="btn btn-danger">
-                    Xóa sinh viên
+                    <i class="fas fa-trash-alt"></i> Xóa dữ liệu khuôn mặt
                 </button>
             </form>
         </div>
@@ -37,13 +39,29 @@
 
 </div>
 
-{{-- Tự động gán action động theo MSSV --}}
+{{-- Script xử lý submit form --}}
 <script>
     document.getElementById('deleteForm').addEventListener('submit', function(e) {
-        let id = document.getElementById('studentId').value;
+        let rawId = document.getElementById('studentId').value;
+        let id = rawId.trim().toUpperCase(); 
 
-        // Gán đúng route: /rekognition/delete/{studentId}
-        this.action = "/rekognition/delete/" + id;
+        if (!id) {
+            e.preventDefault();
+            alert("Vui lòng nhập MSSV hợp lệ!");
+            return;
+        }
+
+        let isConfirmed = confirm('⚠️ Bạn có chắc chắn muốn xóa dữ liệu khuôn mặt của sinh viên ' + id + ' không?\nHành động này không thể hoàn tác!');
+        
+        if (!isConfirmed) {
+            e.preventDefault();
+            return;
+        }
+
+        let routeUrl = "{{ route('rekognition.delete', ['studentId' => 'PLACEHOLDER']) }}";
+        
+        // Thay thế chữ 'PLACEHOLDER' bằng MSSV thật do người dùng nhập
+        this.action = routeUrl.replace('PLACEHOLDER', encodeURIComponent(id));
     });
 </script>
 

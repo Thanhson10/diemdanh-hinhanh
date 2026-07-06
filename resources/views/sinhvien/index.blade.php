@@ -1,6 +1,17 @@
 @extends('layouts.main-layout')
 @section('content')
 <div class="container p-4">
+     @if(session('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if(session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>📚 Danh sách sinh viên</h2>
         
@@ -76,7 +87,7 @@
                         <td><span class="badge bg-info">{{ $sv->lop }}</span></td>
                         <td>{{ $sv->email }}</td>
                         <td>
-                            @if($sv->hinh_anh)
+                            @if($sv->da_train_khuon_mat && $sv->hinh_anh)
                                 <img src="{{ asset($sv->hinh_anh) }}" 
                                     width="60" 
                                     height="60" 

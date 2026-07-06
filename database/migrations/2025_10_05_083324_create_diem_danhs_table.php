@@ -22,7 +22,7 @@ return new class extends Migration
         // Khóa ngoại liên kết đến sinh viên
         $table->foreignId('sinh_vien_id')
               ->constrained('sinh_viens')
-              ->onDelete('cascade');
+              ->onDelete('restrict');
 
         // Mỗi sinh viên chỉ được điểm danh 1 lần cho một lịch thi
         $table->unique(['lich_thi_id', 'sinh_vien_id']);

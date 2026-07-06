@@ -67,7 +67,7 @@
                 <div class="text-danger mt-1">{{ $message }}</div>
             @enderror
         </div>
-        @if($sinhvien->hinh_anh)
+        <!-- @if($sinhvien->hinh_anh)
         <div class="mb-2">
         <label>Ảnh hiện tại:</label><br>
         <img src="{{ asset($sinhvien->hinh_anh) }}" width="100" height="100" class="rounded mb-2">
@@ -83,7 +83,7 @@
             @error('hinh_anh')
                 <div class="text-danger mt-1">{{ $message }}</div>
             @enderror
-        </div>
+        </div> -->
         <button class="btn btn-primary mt-2">Cập nhật</button>
         <a href="{{ route('sinhvien.index') }}" class="btn btn-secondary mt-2">Quay lại</a>
     </form>

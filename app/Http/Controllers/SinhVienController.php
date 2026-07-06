@@ -9,6 +9,8 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Validation\Rule;
 class SinhVienController extends Controller
 {
+        private $bucket = 'diemdanh-sinhvien';
+        private $collection = 'sinhvien_faces';
     // Danh sách sinh viên
    public function index(Request $request)
     {
@@ -41,7 +43,6 @@ class SinhVienController extends Controller
             'lop_y'   => 'required|digits:2',
             'lop_z'   => 'required|digits:2',
             'email'   => 'required|email|unique:sinh_viens',
-            'hinh_anh'=> 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ], [
             'ma_sv.unique' => '⚠️ Mã số sinh viên đã tồn tại!',
             'email.unique' => '⚠️ Email đã tồn tại!',
@@ -52,26 +53,8 @@ class SinhVienController extends Controller
         $lop    = "D{$request->lop_y}_TH{$request->lop_z}";
 
         /** Chuẩn bị data */
-        $data = $request->except(['lop_y', 'lop_z', 'hinh_anh']);
+        $data = $request->except(['lop_y', 'lop_z']);
         $data['lop'] = $lop;
-
-        /** Thư mục upload */
-        $uploadPath = $_SERVER['DOCUMENT_ROOT'] . "/uploads/hinhanh_sv/{$folder}";
-
-        if (!file_exists($uploadPath)) {
-            mkdir($uploadPath, 0755, true);
-        }
-
-        /** Upload ảnh */
-        if ($request->hasFile('hinh_anh')) {
-            $file = $request->file('hinh_anh');
-            $extension = $file->getClientOriginalExtension();
-
-            $fileName = $request->ma_sv . '.' . $extension;
-            $file->move($uploadPath, $fileName);
-
-            $data['hinh_anh'] = "uploads/hinhanh_sv/{$folder}/{$fileName}";
-        }
 
         SinhVien::create($data);
 
@@ -120,7 +103,6 @@ class SinhVienController extends Controller
                 'email',
                 Rule::unique('sinh_viens')->ignore($sinhvien->id),
             ],
-            'hinh_anh' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ], [
             'ma_sv.unique' => '⚠️ Mã số sinh viên đã tồn tại!',
             'email.unique' => '⚠️ Email đã tồn tại!',
@@ -131,62 +113,8 @@ class SinhVienController extends Controller
         $lop       = "D{$request->lop_y}_TH{$request->lop_z}";
 
         /** Chuẩn bị data */
-        $data = $request->except(['hinh_anh', 'xoa_anh', 'lop_y', 'lop_z']);
+        $data = $request->except(['lop_y', 'lop_z']);
         $data['lop'] = $lop;
-
-        $basePath = $_SERVER['DOCUMENT_ROOT'] . '/uploads/hinhanh_sv';
-        $oldPath  = $basePath . '/' . $oldFolder;
-        $newPath  = $basePath . '/' . $newFolder;
-
-        if (!file_exists($newPath)) {
-            mkdir($newPath, 0755, true);
-        }
-
-        /** Xóa ảnh */
-        if ($request->has('xoa_anh') && $sinhvien->hinh_anh) {
-            $oldFile = $_SERVER['DOCUMENT_ROOT'] . '/' . $sinhvien->hinh_anh;
-            if (file_exists($oldFile)) unlink($oldFile);
-            $data['hinh_anh'] = null;
-        }
-
-        /** Upload ảnh mới */
-        if ($request->hasFile('hinh_anh')) {
-
-            if ($sinhvien->hinh_anh) {
-                $oldFile = $_SERVER['DOCUMENT_ROOT'] . '/' . $sinhvien->hinh_anh;
-                if (file_exists($oldFile)) unlink($oldFile);
-            }
-
-            $file = $request->file('hinh_anh');
-            $extension = $file->getClientOriginalExtension();
-
-            $fileName = $request->ma_sv . '.' . $extension;
-            $file->move($newPath, $fileName);
-
-            $data['hinh_anh'] = "uploads/hinhanh_sv/{$newFolder}/{$fileName}";
-        }
-
-        /** Rename + move ảnh khi đổi ma_sv hoặc lớp */
-        if (
-            !$request->hasFile('hinh_anh') &&
-            !$request->has('xoa_anh') &&
-            $sinhvien->hinh_anh &&
-            ($oldMaSv !== $request->ma_sv || $oldFolder !== $newFolder)
-        ) {
-            $oldFile = glob($oldPath . '/' . $oldMaSv . '.*');
-
-            if (!empty($oldFile)) {
-                $extension = pathinfo($oldFile[0], PATHINFO_EXTENSION);
-                $newFileName = $request->ma_sv . '.' . $extension;
-
-                rename(
-                    $oldFile[0],
-                    $newPath . '/' . $newFileName
-                );
-
-                $data['hinh_anh'] = "uploads/hinhanh_sv/{$newFolder}/{$newFileName}";
-            }
-        }
 
         $sinhvien->update($data);
 
@@ -197,27 +125,44 @@ class SinhVienController extends Controller
     // Xóa sinh viên
     public function destroy($id)
     {
-        $sinhvien = SinhVien::findOrFail($id);
+        try {
+            $sv = SinhVien::findOrFail($id);
 
-        if ($sinhvien->hinh_anh) {
-            $imagePath = $_SERVER['DOCUMENT_ROOT'] . '/' . $sinhvien->hinh_anh;
-
-            if (file_exists($imagePath)) {
-                unlink($imagePath);
+            // Nếu sinh viên đã có tên trong bất kỳ danh sách điểm danh nào -> CHẶN XÓA
+            if ($sv->diemDanhs()->exists()) {
+                return redirect()->back()->with('error', 'Không thể xóa! Sinh viên này đã có dữ liệu điểm danh trong lịch thi.');
             }
 
-            //xóa thư mục lớp nếu rỗng
-            $folderPath = dirname($imagePath);
-            if (is_dir($folderPath) && count(scandir($folderPath)) === 2) {
-                rmdir($folderPath);
+            if ($sv->da_train_khuon_mat) {
+                $lambdaUrl = env('LAMBDA_DELETE_URL');
+
+                $response = Http::post($lambdaUrl, [
+                    'bucket'          => $this->bucket,
+                    'collectionId'    => $this->collection,
+                    'externalImageId' => $sv->ma_sv,
+                ]);
+
+                if (!$response->ok()) {
+                    return redirect()->back()->with('error', 'Không thể kết nối đến AWS Lambda để xóa ảnh khuôn mặt.');
+                }
+
+                $data = $response->json();
+                if (isset($data['body'])) {
+                    $data = json_decode($data['body'], true);
+                }
+
+                if (empty($data['success'])) {
+                    return redirect()->back()->with('error', 'Lỗi từ AWS khi xóa mặt: ' . ($data['message'] ?? 'Không xác định'));
+                }
             }
+            // XÓA SINH VIÊN TRONG DATABASE
+            $sv->delete();
+
+            return redirect()->back()->with('success', 'Đã xóa sinh viên và toàn bộ dữ liệu khuôn mặt thành công!');
+
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Đã xảy ra lỗi hệ thống: ' . $e->getMessage());
         }
-
-        $sinhvien->delete();
-
-        return redirect()
-            ->route('sinhvien.index')
-            ->with('success', 'Đã xoá sinh viên và ảnh liên quan!');
     }
 
     public function import(Request $request)

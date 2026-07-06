@@ -108,6 +108,9 @@
                             <i class="fa-solid fa-eye"></i>
                         </a>
                         @endif
+                        <a href="{{ route('diemdanh.show', $lt->id) }}" class="btn btn-info btn-sm">
+                                📊 Xem tiến trình
+                        </a>
                     @else
 
                         @if($lt->trang_thai === 'da_ket_thuc')
@@ -229,9 +232,8 @@
                         <div class="col-6">
                             <label class="form-label">Tên sinh viên:</label>
                             <div id="studentNames"
-                                    style="min-height: 275px; overflow-y: auto; border: 1px solid #ccc;
+                                    style="height: 275px; overflow-y: auto; border: 1px solid #ccc;
                                     padding: 8px; border-radius: 5px;">
-                                <i>Nhập MSSV để hiển thị...</i>
                             </div>
                         </div>
                     </div>

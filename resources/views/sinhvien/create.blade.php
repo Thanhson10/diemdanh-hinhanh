@@ -75,13 +75,13 @@
                 <div class="text-danger mt-1">{{ $message }}</div>
             @enderror
         </div>
-        <div class="mb-2">
+        <!-- <div class="mb-2">
             <label>Ảnh sinh viên</label>
             <input type="file" name="hinh_anh" class="form-control" accept="image/*">
             @error('hinh_anh')
                 <div class="text-danger mt-1">{{ $message }}</div>
             @enderror
-        </div>
+        </div> -->
         <button class="btn btn-success mt-2">Lưu</button>
         
     </form>

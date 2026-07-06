@@ -2,6 +2,17 @@
 
 @section('content')
 <div class="container mt-4">
+      @if(session('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if(session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
     <h2>Danh sách Giảng viên</h2>
     @if(Auth::user()->vai_tro === 'admin')
     <div class="mb-3 text-end">
@@ -49,13 +60,13 @@
             @endforeach
         </tbody>
         <br>
-        @if(Auth::user()->vai_tro === 'admin')
+        <!-- @if(Auth::user()->vai_tro === 'admin')
         <form action="{{ route('giangvien.import') }}" method="POST" enctype="multipart/form-data" class="mb-3">
-    @csrf
-    <input type="file" name="file" accept=".xlsx,.xls,.csv" required>
-    <button type="submit" class="btn btn-success">Import Excel</button>
-</form>
-@endif
+            @csrf
+            <input type="file" name="file" accept=".xlsx,.xls,.csv" required>
+            <button type="submit" class="btn btn-success">Import Excel</button>
+        </form>
+        @endif -->
 
     </table>
 </div>

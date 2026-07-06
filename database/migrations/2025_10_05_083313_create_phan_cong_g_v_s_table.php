@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('phan_cong_gvs', function (Blueprint $table) {
         $table->id();
         $table->foreignId('lich_thi_id')->constrained('lich_this')->onDelete('cascade');
-        $table->foreignId('giang_vien_id')->constrained('giang_viens')->onDelete('cascade');
+        $table->foreignId('giang_vien_id')->constrained('giang_viens')->onDelete('restrict');
         $table->timestamps();
         $table->unique(['lich_thi_id', 'giang_vien_id']);
     });

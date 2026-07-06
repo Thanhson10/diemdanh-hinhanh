@@ -38,7 +38,7 @@ async function uploadTrain(url) {
 
     let promises = Array.from(files).map((file, index) => {
         let stt = index + 1;
-        let ma_sv = file.name.split('.')[0].trim().toUpperCase();
+        let ma_sv = file.name.substring(0, file.name.lastIndexOf('.')).trim().toUpperCase();
 
         let formData = new FormData();
         formData.append('ma_sv', ma_sv);

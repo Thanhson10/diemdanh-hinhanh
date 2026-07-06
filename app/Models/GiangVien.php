@@ -24,14 +24,14 @@ class GiangVien extends Authenticatable
         'password',
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
+    // protected static function boot()
+    // {
+    //     parent::boot();
 
-        static::deleting(function ($giangVien) {
-            $giangVien->phanCongGVs()->delete();
-        });
-    }
+    //     static::deleting(function ($giangVien) {
+    //         $giangVien->phanCongGVs()->delete();
+    //     });
+    // }
     public function phanCongGVs()
     {
         return $this->hasMany(PhanCongGV::class, 'giang_vien_id');
