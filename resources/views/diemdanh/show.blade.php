@@ -44,6 +44,7 @@
                 <thead class="table-dark">
                     <tr>
                         <th>#</th>
+                        <th>Ảnh</th>
                         <th>Mã SV</th>
                         <th>Họ tên</th>
                         <th>Lớp</th>
@@ -58,13 +59,19 @@
                     @foreach ($sinhViens as $item)
                         <tr data-id="{{ $item->id }}">
                             <td>{{ $loop->iteration }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-info btn-xem-anh" 
+                                    data-id="{{ $item->sinhVien->id }}">
+                                    👁 Xem
+                                </button>
+                            </td>
                             <td>{{ $item->sinhVien->ma_sv }}</td>
                             <td class="text-start">{{ $item->sinhVien->ho_ten }}</td>
                             <td >{{ $item->sinhVien->lop }}</td>
                             <td>
                                 <input type="checkbox" class="form-check-input toggle-diemdanh"
                                     data-id="{{ $item->id }}" {{ $item->ket_qua === 'hợp lệ' ? 'checked' : '' }}
-                                    @if($lichThi->trang_thai === 'da_ket_thuc') disabled @endif>
+                                    @if($lichThi->trang_thai === 'da_ket_thuc') disabled @endif
                             </td>
                             <td class="col-ketqua">{{ $item->ket_qua ?? 'Chưa có' }}</td>
                             <td class="col-dochinhxac">{{ $item->do_chinh_xac ?? '-' }}</td>
@@ -98,8 +105,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(() => alertBox.classList.remove('show'), 3000);
             };
 
-            if(!checked){
-                if(!confirm("Bạn có chắc muốn hủy điểm danh sinh viên này?")){
+           if(checked){
+                if(!confirm("Bạn có chắc muốn ĐIỂM DANH sinh viên này?")){
+                    this.checked = false;
+                    row.style.opacity="1";
+                    return;
+                }
+            }else{
+                if(!confirm("Bạn có chắc muốn HỦY điểm danh sinh viên này?")){
                     this.checked = true;
                     row.style.opacity="1";
                     return;
@@ -115,9 +128,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await res.json();
                 if(data.success){
                     const now = new Date();
-                    const dateStr = now.toLocaleDateString('vi-VN');
-                    const timeStrOnly = now.toLocaleTimeString('vi-VN');
-                    const timeStr = `${dateStr} ${timeStrOnly}`;
+
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    const seconds = String(now.getSeconds()).padStart(2, '0');
+
+                    const timeStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 
                     row.querySelector('.col-ketqua').textContent = checked ? 'hợp lệ':'Chưa có';
                     row.querySelector('.col-dochinhxac').textContent = checked ? '100':'-';
@@ -140,5 +160,58 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+    document.querySelectorAll('.btn-xem-anh').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const id = this.dataset.id;
+            let html = '';
+            const res = await fetch(`/sinhvien/${id}/anh-train`);
+            const data = await res.json();
+            if (data.length === 0) {
+                html = `<div class="text-muted">Không có ảnh train</div>`;
+            }
+            else { html = `
+                <div style="
+                    display:flex;
+                    flex-direction:column;
+                    gap:10px;
+                    align-items:center;
+                ">
+            `;
+
+            data.forEach(img => {
+                html += `
+                    <img src="${img.url}" 
+                        style="
+                            width:100%;
+                            max-width:250px;
+                            border-radius:10px;
+                            object-fit:cover;
+                            box-shadow:0 2px 8px rgba(0,0,0,0.15);
+                        ">
+                `;
+            });
+
+            html += `</div>`;
+        }
+
+            document.getElementById('modal-body-anh').innerHTML = html;
+
+            new bootstrap.Modal(document.getElementById('modalAnh')).show();
+        });
+    });
 </script>
+<div class="modal fade" id="modalAnh" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Ảnh đã train</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modal-body-anh">
+        Loading...
+      </div>
+    </div>
+  </div>
+</div>
 @endsection

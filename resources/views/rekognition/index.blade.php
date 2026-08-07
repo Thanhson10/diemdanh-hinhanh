@@ -98,6 +98,7 @@
                                     <thead class="table-light">
                                         <tr>
                                             <th>#</th>
+                                            <th>Ảnh</th>
                                             <th>Mã SV</th>
                                             <th>Họ tên</th>
                                             <th>Lớp</th>
@@ -112,6 +113,12 @@
                                         @foreach ($sinhViens as $item)
                                             <tr data-id="{{ $item->id }}">
                                                 <td>{{ $loop->iteration }}</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-info btn-xem-anh" 
+                                                        data-id="{{ $item->sinhVien->id }}">
+                                                        👁 Xem
+                                                    </button>
+                                                </td>
                                                 <td>{{ $item->sinhVien->ma_sv }}</td>
                                                 <td>{{ $item->sinhVien->ho_ten }}</td>
                                                 <td>{{ $item->sinhVien->lop }}</td>
@@ -259,13 +266,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     ------------------------- */
     async function openCameraStream() {
         const constraints = {
-            video: { 
-                width: { ideal: 640 },
-                height: { ideal: 480 },
-                frameRate: { ideal: 20 },
-                facingMode: currentFacingMode // Sử dụng facingMode thay vì deviceId
-            }
-        };
+        video: { 
+            width: { ideal: 1920 }, 
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30 },
+            facingMode: currentFacingMode 
+        }
+    };
         
         console.log(`📷 Đang mở camera: ${currentFacingMode === 'environment' ? 'SAU' : 'TRƯỚC'}`);
         
@@ -599,21 +606,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Đã dừng live detection');
         }
 
-        const MAX = 960;
-        let newW = w, newH = h;
-        if (w > h && w > MAX) {
-            newW = MAX; newH = Math.round(h * (MAX / w));
-        } else if (h > MAX) {
-            newH = MAX; newW = Math.round(w * (MAX / h));
-        }
-
         const canvas = document.createElement('canvas');
-        canvas.width = newW;
-        canvas.height = newH;
+        canvas.width = w;
+        canvas.height = h;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, newW, newH);
+        ctx.drawImage(video, 0, 0, w, h);
 
-        capturedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        capturedBase64 = canvas.toDataURL('image/jpeg', 0.95);
         capturedImage.src = capturedBase64;
 
         // Chuyển UI - ẨN NÚT CHUYỂN CAMERA
@@ -895,8 +894,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const json = await res.json();
         
         if (res.ok) {
-            if (json.updated_faces) {
-                detectedStudents = json.updated_faces;
+            if (json.faces) {
+                detectedStudents = json.faces;
             } else {
                 const message = json.message || '';
                 const messageLines = message.split('\n');
@@ -1015,8 +1014,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 };
 
-                if(!checked){
-                    if(!confirm("Bạn có chắc muốn hủy điểm danh sinh viên này?")){
+                if(checked){
+                    if(!confirm("Bạn có chắc muốn ĐIỂM DANH sinh viên này?")){
+                        this.checked = false;
+                        row.style.opacity="1";
+                        return;
+                    }
+                }else{
+                    if(!confirm("Bạn có chắc muốn HỦY điểm danh sinh viên này?")){
                         this.checked = true;
                         row.style.opacity="1";
                         return;
@@ -1032,9 +1037,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const data = await res.json();
                     if(data.success){
                         const now = new Date();
-                        const dateStr = now.toLocaleDateString('vi-VN');
-                        const timeStrOnly = now.toLocaleTimeString('vi-VN');
-                        const timeStr = `${dateStr} ${timeStrOnly}`;
+
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const day = String(now.getDate()).padStart(2, '0');
+
+                        const hours = String(now.getHours()).padStart(2, '0');
+                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                        const seconds = String(now.getSeconds()).padStart(2, '0');
+
+                        const timeStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 
                         row.querySelector('.col-ketqua').textContent = checked ? 'hợp lệ':'Chưa có';
                         row.querySelector('.col-dochinhxac').textContent = checked ? '100':'-';
@@ -1063,6 +1075,69 @@ document.addEventListener('DOMContentLoaded', async () => {
     attachToggleEventListeners();
 
 });
+
+document.addEventListener('click', async function(e) {
+    const btn = e.target.closest('.btn-xem-anh');
+    if (!btn) return;
+
+    const id = btn.dataset.id;
+
+    let html = '<div class="text-center">Đang tải...</div>';
+    document.getElementById('modal-body-anh').innerHTML = html;
+
+    new bootstrap.Modal(document.getElementById('modalAnh')).show();
+
+    try {
+        const res = await fetch(`/sinhvien/${id}/anh-train`);
+        const data = await res.json();
+
+        if (data.length === 0) {
+            html = `<div class="text-muted text-center">Không có ảnh train</div>`;
+        } else {
+            html = `
+                <div style="
+                    display:flex; //display:grid;
+                    flex-direction:column; //grid-template-columns: repeat(2, 1fr);
+                    gap:10px;
+                    align-items:center;
+                ">
+            `;
+
+            data.forEach(img => {
+                html += `
+                    <img src="${img.url}" 
+                        style="
+                            width:100%;
+                            max-width:250px;
+                            border-radius:10px;
+                            object-fit:cover;
+                            box-shadow:0 2px 8px rgba(0,0,0,0.15);
+                        ">
+                `;
+            });
+
+            html += `</div>`;
+        }
+
+    } catch (err) {
+        html = `<div class="text-danger text-center">Lỗi load ảnh</div>`;
+    }
+
+    document.getElementById('modal-body-anh').innerHTML = html;
+});
 </script>
 
+<div class="modal fade" id="modalAnh" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Ảnh đã train</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modal-body-anh">
+        Loading...
+      </div>
+    </div>
+  </div>
+</div>
 @endsection

@@ -2,6 +2,11 @@
 
 @section('content')
 <div class="container mt-4">
+     @if(session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
     <h3>🧾 Danh sách sinh viên phòng {{ $lichThi->phong }} – {{ $lichThi->monHoc->ten_mon }}</h3>
 
     <a href="{{ route('lichthi.index') }}" class="btn btn-secondary mb-3">Trở lại</a>

@@ -25,21 +25,32 @@ class DiemDanhController extends Controller
             });
         }
 
-        if ($request->filled('search')) {
-            $search = trim($request->search);
-
-            $query->where(function ($q) use ($search) {
-
-                // Tìm theo phòng
-                $q->where('phong', 'like', "%$search%")
-
-                // Tìm theo tên môn
-                ->orWhereHas('monHoc', function ($sub) use ($search) {
-                    $sub->where('ten_mon', 'like', "%$search%");
-                });
+        if ($request->filled('ten_mon')) {
+            $query->whereHas('monHoc', function ($q) use ($request) {
+                $q->where('ten_mon', 'like', "%{$request->ten_mon}%");
             });
         }
-        $lichThis = $query->orderBy('ngay_thi', 'desc')->orderBy('gio_thi', 'desc')->paginate(10);
+
+        if ($request->filled('phong')) {
+            $query->where('phong', 'like', "%{$request->phong}%");
+        }
+
+        if ($request->filled('ngay')) {
+            $query->where('ngay_thi', $request->ngay);
+        }
+
+        if ($request->filled('ky_thi')) {
+            $query->where('ky_thi', 'like', "%{$request->ky_thi}%");
+        }
+        if ($request->filled('nam_hoc')) {
+            $query->where('nam_hoc', 'like', "%{$request->nam_hoc}%");
+        }
+        if ($request->filled('trang_thai')) {
+            $query->where('trang_thai', $request->trang_thai);
+        }
+        $lichThis = $query->orderByRaw("
+            FIELD(trang_thai, 'dang_dien_ra', 'chua_dien_ra', 'da_ket_thuc')")
+            ->orderBy('ngay_thi', 'desc')->orderBy('gio_thi', 'desc')->paginate(10)->withQueryString();;
         foreach ($lichThis as $lichThi) {
             $lichThi->capNhatTrangThai();
         }
@@ -74,6 +85,10 @@ class DiemDanhController extends Controller
         // Sắp xếp theo id giảm dần (mới nhất lên trước)
         $sinhViens = $sinhViensQuery->orderBy('sinh_vien_id', 'asc')->get();
 
+        if (request('type') === 'tientrinh') {
+            return view('diemdanh.showtientrinh', compact('lichThi', 'sinhViens'),['hideSearch' => true]);
+        }
+
         return view('diemdanh.show', compact('lichThi', 'sinhViens'),['hideSearch' => true]);
     }
 
@@ -97,7 +112,7 @@ class DiemDanhController extends Controller
     {
         $record = DiemDanh::findOrFail($id);
         $record->delete();
-        return redirect()->back()->with('success', 'Xóa bản ghi điểm danh thành công!');
+        return redirect()->back()->with('success', 'Xóa thành công!');
     }
 
     public function toggle(Request $request)
@@ -131,5 +146,18 @@ class DiemDanhController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()]);
         }
+    }
+
+    public function anhTrain($id)
+    {
+        $sinhVien = SinhVien::with('danhSachAnhTrain')->findOrFail($id);
+
+        return response()->json(
+            $sinhVien->danhSachAnhTrain->map(function($img){
+                return [
+                    'url' => $img->hinh_anh_url 
+                ];
+            })
+        );
     }
 }

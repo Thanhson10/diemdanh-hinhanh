@@ -3,6 +3,12 @@
 @section('title', 'Trang chủ - Danh sách phòng thi')
 
 @section('content')
+        @if(session('warning'))
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                {{ session('warning') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
     <h2 style="margin-bottom: 16px;">📚 Danh sách phòng thi</h2>
     
     <div class="grid-container">

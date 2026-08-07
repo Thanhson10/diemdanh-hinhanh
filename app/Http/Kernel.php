@@ -52,5 +52,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'giangvien.auth' => \App\Http\Middleware\GiangVienAuth::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
+        'checkactive' => \App\Http\Middleware\CheckActive::class,
     ];
 }

@@ -9,6 +9,12 @@
     @foreach ($sinhViens as $item)
         <tr data-id="{{ $item->id }}">
             <td>{{ $loop->iteration }}</td>
+            <td>
+                <button class="btn btn-sm btn-info btn-xem-anh" 
+                    data-id="{{ $item->sinhVien->id }}">
+                    👁 Xem
+                </button>
+            </td>
             <td>{{ $item->sinhVien->ma_sv }}</td>
             <td>{{ $item->sinhVien->ho_ten }}</td>
             <td>{{ $item->sinhVien->lop }}</td>
@@ -24,3 +30,4 @@
         </tr>
     @endforeach
 @endif
+

@@ -15,9 +15,6 @@ class SinhVien extends Model
         'ho_ten',
         'lop',
         'email',
-        'hinh_anh',
-        'da_train_khuon_mat',
-        'face_ids',
         'do_chinh_xac_tb',
         'so_lan_nhan_dien',
     ];
@@ -41,5 +38,23 @@ class SinhVien extends Model
     {
         return $this->so_lan_nhan_dien >= 5
             && $this->do_chinh_xac_tb < 85;
+    }
+
+    public function danhSachAnhTrain()
+    {
+        return $this->hasMany(AnhTrainSv::class, 'sinh_vien_id', 'id');
+    }
+    public function anhDaTrain()
+    {
+        return $this->danhSachAnhTrain()->where('trang_thai', 'trained');
+    }
+
+    protected static function booted()
+    {
+        static::deleting(function ($sinhVien) {
+            if ($sinhVien->danhSachAnhTrain()->exists()) {
+                throw new \Exception('Không thể xóa! Sinh viên này vẫn còn ảnh dữ liệu khuôn mặt. Vui lòng xóa toàn bộ ảnh của sinh viên trước.');
+            }
+        });
     }
 }

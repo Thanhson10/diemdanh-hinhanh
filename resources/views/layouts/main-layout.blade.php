@@ -504,7 +504,7 @@
             <i>📚</i> Môn học
         </a>
         <a href="{{ route('rekognition.train') }}" class="menu-item {{ Request::route()->getName() == 'rekognition.train' ? 'active' : '' }}">
-            <i>⚙️</i> Training ảnh sinh viên
+            <i>⚙️</i> Huấn luyện ảnh sinh viên
         </a>
         @endif
         <a href="{{ route('auth.profile') }}" class="menu-item {{ Request::route()->getName() == 'auth.profile' ? 'active' : '' }}">
@@ -522,42 +522,9 @@
                     <i class="fas fa-bars"></i>
                 </div>
                 <div class="logo-section">
-                    <div class="logo-icon">LH</div>
-                    <div class="logo-text">Lớp học</div>
-                </div>
-            </div>
-            
-            <!-- Center Section - Search Bar -->
-            <div class="header-center">
-                @unless(isset($hideSearch) && $hideSearch === true)
-                    @hasSection('search')
-                        @yield('search')
-                    @else
-                        @php
-                            $currentRoute = Route::currentRouteName();
-                            
-                            // Chỉ xử lý 2 route này
-                            if ($currentRoute === 'sinhvien.index') {
-                                $action = route('sinhvien.index');
-                                $placeholder = 'Tìm kiếm MSSV, tên sinh viên, lớp...';
-                            } else {
-                                // Mặc định là home.index (bao gồm các trang khác)
-                                $action = route('home.index');
-                                $placeholder = 'Tìm kiếm môn thi, phòng thi...';
-                            }
-                        @endphp
-                        
-                        <form action="{{ $action }}" method="GET" class="w-100">
-                            <div class="search-bar">
-                                <div class="search-icon">🔍</div>
-                                <input type="text" name="search" class="search-input" 
-                                    placeholder="{{ $placeholder }}"
-                                    value="{{ request('search') }}">
-                                <button type="submit" style="display:none;"></button>
-                            </div>
-                        </form>
-                    @endif
-                @endunless
+                    <!-- <div class="logo-icon">LH</div>
+                    <div class="logo-text">Lớp học</div> -->
+                </div> 
             </div>
 
             <!-- Right Section -->

@@ -21,7 +21,9 @@ class GiangVienController extends Controller
             $query->where('ho_ten', 'like', "%{$search}%");
         }
 
-        $giangviens = $query->orderBy('id', 'desc')->get();
+        $giangviens = $query->orderBy('is_active', 'desc')
+        ->orderBy('ma_gv', 'desc')
+        ->paginate(10)->withQueryString();
 
         return view('giangvien.index', compact('giangviens'),['hideSearch' => true]);
     }
@@ -88,6 +90,7 @@ class GiangVienController extends Controller
 
         // Không cho cập nhật password hoặc vai_tro
         $giangvien->update([
+            'ma_gv' => $request->ma_gv,
             'ho_ten' => $request->ho_ten,
             'email'  => $request->email,
         ]);
@@ -167,16 +170,26 @@ class GiangVienController extends Controller
     // Phân công giảng viên
     public function assign(GiangVien $giangvien, LichThi $lichthi)
     {
-        // Kiểm tra trùng lịch
-        $exists = $giangvien->lichthis()
-            ->where('ngay_thi', $lichthi->ngay_thi)
-            ->where('gio_thi', $lichthi->gio_thi)
-            ->exists();
+        if (!$giangvien->is_active) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Tài khoản giảng viên {$giangvien->ho_ten} đã bị khóa!"
+            ]);
+        }
+        $batDauMoi = $lichthi->thoi_gian_thi;
+        $ketThucMoi = $batDauMoi->copy()->addMinutes($lichthi->thoi_luong_thi);
 
-        if($exists){
+        $lichTrung = $giangvien->lichthis()->get()->first(function ($lt) use ($batDauMoi, $ketThucMoi) {
+            $batDauCu = $lt->thoi_gian_thi;
+            $ketThucCu = $batDauCu->copy()->addMinutes($lt->thoi_luong_thi);
+
+            return ($batDauCu < $ketThucMoi) && ($ketThucCu > $batDauMoi);
+        });
+
+        if ($lichTrung) {
             return response()->json([
                 'status' => 'conflict',
-                'message' => 'Giảng viên đã có lịch thi cùng thời gian!'
+                'message' => 'Bị trùng lịch thi: '.$lichTrung->monHoc->ten_mon.' ('.$lichTrung->thoi_gian_thi.')'
             ]);
         }
 
@@ -196,5 +209,34 @@ class GiangVienController extends Controller
             'status' => 'success',
             'message' => 'Đã hủy phân công thành công!'
         ]);
+    }
+
+    public function toggle($id)
+    {
+        $gv = GiangVien::findOrFail($id);
+
+        if (auth()->id() == $gv->id) {
+        return back()->with('error', 'Không thể khóa chính tài khoản của bạn!');
+        }
+
+        $hasConflictExam = $gv->lichThis
+            ->contains(function ($lich) {
+
+                $batDau = $lich->thoi_gian_thi;
+                $ketThuc = $batDau->copy()->addMinutes($lich->thoi_luong_thi);
+
+                return now()->between($batDau, $ketThuc) || $batDau > now();
+            });
+
+        // ❌ Nếu đang active và có lịch → chặn khóa
+        if ($hasConflictExam && $gv->is_active) {
+            return back()->with('error', 'Giảng viên đang có hoặc sắp có lịch thi!');
+        }
+
+        // đảo trạng thái
+        $gv->is_active = !$gv->is_active;
+        $gv->save();
+
+        return redirect()->back()->with('success', 'Cập nhật trạng thái thành công!');
     }
 }

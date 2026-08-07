@@ -6,13 +6,12 @@
     <hr>
 
     <div class="mb-3">
-        <label>Chọn ảnh khuôn mặt (tên file = MSSV, ≤5MB, JPG/PNG)</label>
+        <label>Chọn ảnh khuôn mặt (Đảm bảo MSSV nằm ở đầu tên file, ≤2MB, JPG/PNG, VD: DH52201371_1.jpg, dh52201371-2.png)</label>
         <input type="file" id="images" class="form-control" accept="image/jpeg,image/png" multiple required>
         <small id="fileError" class="text-danger"></small>
     </div>
 
     <button class="btn btn-primary" id="uploadBtn">🚀 Upload & Train</button>
-    <button class="btn btn-warning ms-2" id="retrainBtn">🔁 Train lại</button>
 
     <hr>
 
@@ -24,7 +23,7 @@
 
 <script>
 async function uploadTrain(url) {
-    const files = document.getElementById('images').files;
+    const files = Array.from(document.getElementById('images').files);
     const logBox = document.getElementById('logs');
 
     if (files.length === 0) {
@@ -33,12 +32,24 @@ async function uploadTrain(url) {
     }
 
     logBox.innerHTML = "";
-
     let total = files.length;
 
-    let promises = Array.from(files).map((file, index) => {
+    // Hàm xử lý 1 file
+    async function uploadSingle(file, index) {
         let stt = index + 1;
-        let ma_sv = file.name.substring(0, file.name.lastIndexOf('.')).trim().toUpperCase();
+        let fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
+
+        let match = fileNameWithoutExt.match(/[A-Z]{2}\d{8}/i);
+        if (!match) {
+            logBox.innerHTML += `
+                <div class="text-danger">
+                    ❌ [${stt}/${total}] ${file.name}: Không nhận diện được MSSV
+                </div>
+            `;
+            return;
+        }
+
+        let ma_sv = match[0].toUpperCase();
 
         let formData = new FormData();
         formData.append('ma_sv', ma_sv);
@@ -50,44 +61,56 @@ async function uploadTrain(url) {
             </div>
         `;
 
-        return fetch(url, {
-            method: "POST",
-            headers: { "X-CSRF-TOKEN": "{{ csrf_token() }}" },
-            body: formData
-        })
-        .then(res => res.json())
-        .then(result => {
+        try {
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "X-CSRF-TOKEN": "{{ csrf_token() }}" },
+                body: formData
+            });
+
+            const result = await res.json();
             const logEl = document.getElementById(`log-${index}`);
+
             if (result.success) {
                 logEl.innerHTML = `✅ [${stt}/${total}] ${file.name}: ${result.message}`;
                 logEl.classList.add('text-success');
             } else {
-                logEl.innerHTML = `❌ [${stt}/${total}] ${file.name}: ${result.message}`;
+                let errorMsg = result.message;
+
+                if (errorMsg.includes('Không tồn tại MSSV')) {
+                    errorMsg = `Không tồn tại MSSV: ${ma_sv}`;
+                }
+
+                logEl.innerHTML = `❌ [${stt}/${total}] ${file.name}: ${errorMsg}`;
                 logEl.classList.add('text-danger');
             }
-        })
-        .catch(() => {
+        } catch (e) {
             const logEl = document.getElementById(`log-${index}`);
             logEl.innerHTML = `🔥 [${stt}/${total}] ${file.name}: Lỗi server`;
             logEl.classList.add('text-danger');
-        });
-    });
+        }
+    }
 
-    await Promise.all(promises);
+    const limit = 3;
+
+    for (let i = 0; i < files.length; i += limit) {
+        const chunk = files.slice(i, i + limit);
+
+        await Promise.all(
+            chunk.map((file, idx) => uploadSingle(file, i + idx))
+        );
+    }
+
     logBox.innerHTML += `<div><b>Hoàn tất ${total} ảnh!</b></div>`;
 }
-// 🚀 Train lần đầu
+
 document.getElementById('uploadBtn').onclick = () =>
     uploadTrain("{{ route('rekognition.train.ajax') }}");
-
-// 🔁 Train lại
-document.getElementById('retrainBtn').onclick = () =>
-    uploadTrain("{{ route('rekognition.retrain.ajax') }}");
 </script>
 
 <script>
 document.getElementById('images').addEventListener('change', function () {
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 2 * 1024 * 1024;
     const allowedTypes = ['image/jpeg', 'image/png'];
 
     const dt = new DataTransfer();
@@ -100,7 +123,7 @@ document.getElementById('images').addEventListener('change', function () {
         }
 
         if (file.size > maxSize) {
-            errors.push(`❌ ${file.name}: vượt quá 5MB`);
+            errors.push(`❌ ${file.name}: vượt quá 2MB`);
             continue;
         }
 

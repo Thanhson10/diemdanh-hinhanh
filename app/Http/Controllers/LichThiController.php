@@ -67,7 +67,8 @@ class LichThiController extends Controller
         ")
         ->orderBy('ngay_thi', 'desc')
         ->orderBy('gio_thi', 'desc')
-        ->paginate(10);
+        ->paginate(10)
+        ->withQueryString();
 
         foreach ($lichthis as $lichThi) {
             $lichThi->capNhatTrangThai();
@@ -95,29 +96,39 @@ class LichThiController extends Controller
             'mon_hoc_id' => 'required|exists:mon_hocs,id',
             'ngay_thi'   => 'required|date',
             'gio_thi'    => 'required',
+            'thoi_luong_thi' => 'required|integer|min:1|max:300',
             'phong'      => 'required|string',
             'ky_thi'     => 'required|string',
             'nam_hoc'    => ['required', Rule::in($validNamHoc)],
         ], [
         'nam_hoc.in' => 'Năm học chỉ được phép là: ' . implode(' hoặc ', $validNamHoc),
+        'mon_hoc_id.required' => 'Không được để trống',
+        'ngay_thi.required' => 'Không được để trống ngày thi',
+        'gio_thi.required' => 'Không được để trống giờ thi',
+        'phong.required' => 'Không được để trống phòng',
+        'ky_thi.required' => 'Không được để trống kỳ thi',
+        'nam_hoc.required' => 'Không được để trống năm học',
+        'thoi_luong_thi.required' => 'Vui lòng nhập thời lượng thi',
+        'thoi_luong_thi.integer' => 'Thời lượng phải là số nguyên',
+        'thoi_luong_thi.min' => 'Thời lượng phải lớn hơn 0',
+        'thoi_luong_thi.max' => 'Thời lượng không được vượt quá 300 phút',
         ]);
 
-        // 1. Gộp ngày + giờ thành DateTime
         $batDau = \Carbon\Carbon::parse($request->ngay_thi . ' ' . $request->gio_thi);
-        $ketThuc = $batDau->copy()->addHour();
-
-        // 2. Check thời gian phải ở tương lai
+        $ketThuc = $batDau->copy()->addMinutes((int) $request->thoi_luong_thi);
+        // Check thời gian phải ở tương lai
         if ($batDau->lessThanOrEqualTo(now())) {
             return back()->withErrors([
+                'ngay_thi' => 'Thời gian thi phải lớn hơn thời điểm hiện tại',
                 'gio_thi' => 'Thời gian thi phải lớn hơn thời điểm hiện tại'
             ])->withInput();
         }
 
-        // 3. Check trùng phòng
+        // Check trùng phòng
        $trungPhong = LichThi::where('phong', $request->phong)
         ->whereRaw(
             "TIMESTAMP(ngay_thi, gio_thi) < ?
-             AND ADDTIME(TIMESTAMP(ngay_thi, gio_thi), '01:00:00') > ?",
+             AND ADDTIME(TIMESTAMP(ngay_thi, gio_thi), SEC_TO_TIME(thoi_luong_thi * 60)) > ?",
             [$ketThuc, $batDau]
         )
         ->exists();
@@ -143,7 +154,14 @@ class LichThiController extends Controller
 
     public function update(Request $request, $id)
     {
+
         $lichthi = LichThi::findOrFail($id);
+
+        if ($lichthi->trang_thai !== 'chua_dien_ra') {
+            return redirect()->route('lichthi.index')
+                ->with('error', 'Chỉ được sửa lịch thi khi chưa diễn ra!');
+        }
+
         $year = now()->year;
 
         $validNamHoc = [
@@ -154,18 +172,20 @@ class LichThiController extends Controller
             'mon_hoc_id' => 'required|exists:mon_hocs,id',
             'ngay_thi'   => 'required|date',
             'gio_thi'    => 'required',
+            'thoi_luong_thi' => 'required|integer|min:1|max:300',
             'phong'      => 'required|string',
             'ky_thi'     => 'required|string',
             'nam_hoc'   => ['required', Rule::in($validNamHoc)],
         ]);
 
-        $batDau = \Carbon\Carbon::parse($request->ngay_thi . ' ' . $request->gio_thi);
-        $ketThuc = $batDau->copy()->addHour();
+        $batDau = \Carbon\Carbon::parse($request->ngay_thi . ' ' . $request->gio_thi, 'Asia/Ho_Chi_Minh');
+        $ketThuc = $batDau->copy()->addMinutes($lichthi->thoi_luong_thi);
 
         // 1. Check thời gian tương lai
         if ($batDau->lessThanOrEqualTo(now())) {
             return back()->withErrors([
-                'gio_thi' => 'Thời gian thi phải lớn hơn thời điểm hiện tại'
+                'gio_thi' => 'Thời gian thi phải lớn hơn thời điểm hiện tại',
+                'ngay_thi' => 'Kiểm tra lại thời gian'
             ])->withInput();
         }
 
@@ -174,7 +194,7 @@ class LichThiController extends Controller
             ->where('id', '<>', $lichthi->id)
             ->where(function($q) use ($batDau, $ketThuc) {
                 $q->whereRaw("TIMESTAMP(ngay_thi, gio_thi) < ?", [$ketThuc])
-                ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL 1 HOUR) > ?", [$batDau]);
+                ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL thoi_luong_thi MINUTE) > ?", [$batDau]);
             })
             ->exists();
         
@@ -193,9 +213,43 @@ class LichThiController extends Controller
     public function destroy($id)
     {
         $lichthi = LichThi::findOrFail($id);
+
+        if ($lichthi->trang_thai !== 'chua_dien_ra') {
+            return redirect()->route('lichthi.index')
+                ->with('error', 'Chỉ được xóa lịch thi chưa diễn ra!');
+        }
+
         $lichthi->delete();
-        return redirect()->route('lichthi.index')->with('success', 'Đã xóa lịch thi!');
+
+        return redirect()->route('lichthi.index')
+            ->with('success', 'Đã xóa lịch thi!');
     }
+//     public function destroy($id)
+    // {
+    //     $lichthi = LichThi::findOrFail($id);
+
+    //     if ($lichthi->trang_thai === 'dang_dien_ra') {
+    //         return redirect()->route('lichthi.index')
+    //             ->with('error', 'Không thể xóa lịch thi đang diễn ra!');
+    //     }
+
+    //     if ($lichthi->trang_thai === 'da_ket_thuc') {
+
+    //         $coSinhVienCoMat = $lichthi->diemDanhs()
+    //             ->where('trang_thai', '!=', 'vang_mat')
+    //             ->exists();
+
+    //         if ($coSinhVienCoMat) {
+    //             return redirect()->route('lichthi.index')
+    //                 ->with('error', 'Không thể xóa vì đã có sinh viên tham gia!');
+    //         }
+    //     }
+
+    //     $lichthi->delete();
+
+    //     return redirect()->route('lichthi.index')
+    //         ->with('success', 'Đã xóa lịch thi!');
+    // }
 
     
     public function import(Request $request)
@@ -213,7 +267,7 @@ class LichThiController extends Controller
         // Lấy ID các giảng viên đã được phân công cho lịch thi này
         $daPhanCong = $lichThi->phanCongGVs->pluck('giang_vien_id'); 
         // Lọc bỏ các giảng viên đó
-        $giangViens = GiangVien::whereNotIn('id', $daPhanCong)->get();
+        $giangViens = GiangVien::whereNotIn('id', $daPhanCong)->where('is_active', 1)->get();
         return view('lichthi.phancong', compact('lichThi', 'giangViens'),['hideSearch' => true]); 
     } 
     public function phanCongSave(Request $request, $id)
@@ -224,10 +278,17 @@ class LichThiController extends Controller
         ]);
 
         $lichThi = LichThi::findOrFail($request->lich_thi_id);
-        $giangVienId = $request->giang_vien_id;
+        $giangVien = GiangVien::findOrFail($request->giang_vien_id);
 
-        $batDau = \Carbon\Carbon::parse($lichThi->ngay_thi . ' ' . $lichThi->gio_thi);
-        $ketThuc = $batDau->copy()->addHour(); // Giả sử mỗi ca thi 1h
+        // CHECK GIẢNG VIÊN BỊ KHÓA
+        if (!$giangVien->is_active) {
+            return redirect()->back()->with('error', 
+                "Tài khoản giảng viên {$giangVien->ho_ten} đã bị khóa!");
+        }
+        $giangVienId = $giangVien->id;
+
+        $batDau = $lichThi->thoi_gian_thi;
+        $ketThuc = $batDau->copy()->addMinutes($lichThi->thoi_luong_thi);
 
         // Tìm lịch trùng của giảng viên
         $lichTrung = PhanCongGV::where('giang_vien_id', $giangVienId)
@@ -235,7 +296,7 @@ class LichThiController extends Controller
             $q->where('id', '<>', $lichThi->id)
             ->where(function($q2) use ($batDau, $ketThuc) {
                 $q2->whereRaw("TIMESTAMP(ngay_thi, gio_thi) < ?", [$ketThuc])
-                    ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL 1 HOUR) > ?", [$batDau]);
+                    ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL thoi_luong_thi MINUTE) > ?", [$batDau]);
             });
         })
         ->with(['lichThi.monHoc', 'giangVien']) // lấy thông tin giảng viên
@@ -245,7 +306,7 @@ class LichThiController extends Controller
             $lt = $lichTrung->lichThi;
             $gv = $lichTrung->giangVien;
             $msg = "Giảng viên {$gv->ho_ten} đã có lịch thi môn: {$lt->monHoc->ten_mon}, "
-                . "Phòng: {$lt->phong} vào lúc: {$lt->ngay_thi} {$lt->gio_thi}!";
+                . "Phòng: {$lt->phong} vào lúc: {$lt->thoi_gian_thi->format('d-m-Y H:i')}!";
             return redirect()->back()->with('error', $msg);
         }
 
@@ -279,8 +340,8 @@ class LichThiController extends Controller
 
         $students = SinhVien::whereIn('ma_sv', $mssvList)->get();
 
-        $batDau = \Carbon\Carbon::parse($lichthi->ngay_thi . ' ' . $lichthi->gio_thi);
-        $ketThuc = $batDau->copy()->addHour(); // giả sử 1 ca thi = 1h
+        $batDau = $lichthi->thoi_gian_thi;
+        $ketThuc = $batDau->copy()->addMinutes($lichthi->thoi_luong_thi);
 
         $added = [];
         $skipped = [];
@@ -300,7 +361,7 @@ class LichThiController extends Controller
                     $q->where('id', '<>', $lichthi->id)
                     ->where(function($q2) use ($batDau, $ketThuc) {
                         $q2->whereRaw("TIMESTAMP(ngay_thi, gio_thi) < ?", [$ketThuc])
-                            ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL 1 HOUR) > ?", [$batDau]);
+                            ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL thoi_luong_thi MINUTE) > ?", [$batDau]);
                     });
                 })
                 ->with(['lichThi.monHoc'])
@@ -308,7 +369,7 @@ class LichThiController extends Controller
 
             if ($trungLich) {
                 $lt = $trungLich->lichThi;
-                $skipped[] = "{$sv->ma_sv} – {$sv->ho_ten} (trùng môn: {$lt->monHoc->ten_mon}, phòng: {$lt->phong}, {$lt->ngay_thi} {$lt->gio_thi})";
+                $skipped[] = "{$sv->ma_sv} – {$sv->ho_ten} (trùng môn: {$lt->monHoc->ten_mon}, phòng: {$lt->phong}, {$lt->thoi_gian_thi->format('d-m-Y H:i')})";
                 continue;
             }
 

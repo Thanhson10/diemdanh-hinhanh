@@ -2,6 +2,17 @@
 
 @section('content')
 <div class="container mt-4">
+   @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+     @if(session('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
     <h2>Danh sách lịch thi</h2>
     
     @if(Auth::user()->vai_tro === 'admin')
@@ -24,9 +35,9 @@
             <div class="col-md-2">
                 <input type="date" name="ngay" value="{{ request('ngay') }}" class="form-control" placeholder="Ngày thi">
             </div>
-            <div class="col-md-2">
+            <!-- <div class="col-md-2">
                 <input type="time" name="gio" value="{{ request('gio') }}" class="form-control" placeholder="Giờ thi">
-            </div>
+            </div> -->
             <div class="col-md-2">
                 <input type="text" name="ky_thi" value="{{ request('ky_thi') }}" class="form-control" placeholder="Kỳ thi">
             </div>
@@ -56,8 +67,8 @@
         <thead class="table-dark">
             <tr>
                 <th>Tên môn</th>
-                <th>Ngày thi</th>
-                <th>Giờ thi</th>
+                <th>Thời gian</th>
+                <th>Thời lượng (phút)</th>
                 <th>Phòng</th>
                 <th>Hành động</th>
             </tr>
@@ -66,8 +77,8 @@
             @foreach ($lichthis as $lt)
             <tr>
                 <td>{{ $lt->monHoc->ten_mon }}</td>
-                <td>{{ $lt->ngay_thi }}</td>
-                <td>{{ $lt->gio_thi }}</td>
+                <td>{{ $lt->thoi_gian_thi->format('d-m-Y H:i') }}</td>
+                <td>{{ $lt->thoi_luong_thi }}</td>
                 <td>{{ $lt->phong }}</td>
                 <td style="position: relative; min-width: 160px;">
 
@@ -82,7 +93,7 @@
                         <a href="{{ route('lichthi.phancong', $lt->id) }}" class="btn btn-info btn-sm">
                                     Phân công
                         </a>
-                        <div class="d-none d-md-block" style="position:absolute; right:60px; top:3px; text-align:right; font-size:12px; line-height:1.2;">
+                        <div class="d-none d-md-block" style="position:absolute; right:40px; top:3px; text-align:right; font-size:12px; line-height:1.2;">
                             <div>SL: {{ $lt->so_sinh_vien }} SV</div>
                             <div>GV đã PC: {{ $lt->so_giang_vien }} GV</div>
                         </div>
@@ -98,6 +109,10 @@
                         display:flex; align-items:center; justify-content:center;">
                             <i class="fa-solid fa-eye"></i>
                         </a>
+                         <a href="{{ route('diemdanh.show', ['diemdanh' => $lt->id, 'type' => 'tientrinh']) }}" 
+                            class="btn btn-info btn-sm">
+                            📊 Xem tiến trình
+                            </a>
                         @else
                         <a href="{{ route('lichthi.show', $lt->id) }}"
                         class="btn btn-primary btn-sm viewSVBtn"
@@ -108,22 +123,22 @@
                             <i class="fa-solid fa-eye"></i>
                         </a>
                         @endif
-                        <a href="{{ route('diemdanh.show', $lt->id) }}" class="btn btn-info btn-sm">
-                                📊 Xem tiến trình
-                        </a>
                     @else
-
+                        @if(Auth::user()->vai_tro === 'admin')
+                            @if($lt->trang_thai == 'chua_dien_ra')
+                                    <form action="{{ route('lichthi.destroy', $lt->id) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger btn-sm"
+                                            onclick="return confirm('Xóa lịch thi này?')">Xóa</button>
+                                    </form>
+                            @endif
+                        @endif
                         @if($lt->trang_thai === 'da_ket_thuc')
                             @if(Auth::user()->vai_tro === 'admin')
-                            <form action="{{ route('lichthi.destroy', $lt->id) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm"
-                                    onclick="return confirm('Xóa lịch thi này?')">Xóa</button>
-                            </form>
-                                <a href="{{ route('lichthi.ketqua', $lt->id) }}" class="btn btn-info btn-sm">
-                                    📊 Xem kết quả
-                                </a>
+                            <a href="{{ route('lichthi.ketqua', $lt->id) }}" class="btn btn-info btn-sm">
+                                📊 Xem kết quả
+                            </a>
                             <a href="{{ route('lichthi.show', $lt->id) }}"
                             class="btn btn-primary btn-sm viewSVBtn"
                             style="position:absolute; right:3px; top:25px;
@@ -159,13 +174,6 @@
                                     display:flex; align-items:center; justify-content:center;">
                                     <i class="fa-solid fa-plus"></i>
                                 </button>
-
-                                <form action="{{ route('lichthi.destroy', $lt->id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm"
-                                        onclick="return confirm('Xóa lịch thi này?')">Xóa</button>
-                                </form>
 
                                 <a href="{{ route('lichthi.show', $lt->id) }}"
                                 class="btn btn-primary btn-sm viewSVBtn"
@@ -205,9 +213,97 @@
         @endif  --}}
     </table>
 
-    <div class="d-flex justify-content-center">
-        {{ $lichthis->appends(request()->query())->links() }}
+    {{-- Hiển thị phân trang --}}
+    @if($lichthis->hasPages())
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+                {{-- Previous Page Link --}}
+                @if($lichthis->onFirstPage())
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-chevron-left"></i>
+                        </span>
+                    </li>
+                @else
+                    <li class="page-item">
+                        <a class="page-link" href="{{ $lichthis->previousPageUrl() }}" aria-label="Previous">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                @endif
+
+                {{-- Pagination Elements --}}
+                @php
+                    $current = $lichthis->currentPage();
+                    $last = $lichthis->lastPage();
+                    $start = max(1, $current - 2);
+                    $end = min($last, $current + 2);
+                @endphp
+
+                {{-- First Page Link --}}
+                @if($start > 1)
+                    <li class="page-item">
+                        <a class="page-link" href="{{ $lichthis->url(1) }}">1</a>
+                    </li>
+                    @if($start > 2)
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    @endif
+                @endif
+
+                {{-- Page Number Links --}}
+                @for($i = $start; $i <= $end; $i++)
+                    @if($i == $current)
+                        <li class="page-item active">
+                            <span class="page-link">{{ $i }}</span>
+                        </li>
+                    @else
+                        <li class="page-item">
+                            <a class="page-link" href="{{ $lichthis->url($i) }}">{{ $i }}</a>
+                        </li>
+                    @endif
+                @endfor
+
+                {{-- Last Page Link --}}
+                @if($end < $last)
+                    @if($end < $last - 1)
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    @endif
+                    <li class="page-item">
+                        <a class="page-link" href="{{ $lichthis->url($last) }}">{{ $last }}</a>
+                    </li>
+                @endif
+
+                {{-- Next Page Link --}}
+                @if($lichthis->hasMorePages())
+                    <li class="page-item">
+                        <a class="page-link" href="{{ $lichthis->nextPageUrl() }}" aria-label="Next">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                @else
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-chevron-right"></i>
+                        </span>
+                    </li>
+                @endif
+            </ul>
+        </nav>
     </div>
+
+    {{-- Hiển thị thông tin kết quả --}}
+    <div class="text-center text-muted mt-2 small">
+        Hiển thị {{ ($lichthis->currentPage() - 1) * $lichthis->perPage() + 1 }} 
+        đến {{ min($lichthis->currentPage() * $lichthis->perPage(), $lichthis->total()) }} 
+        của {{ $lichthis->total() }} kết quả
+    </div>
+    @endif
+</div>
     
     <!-- Modal Thêm Sinh Viên -->
     <div class="modal fade" id="addStudentsModal" tabindex="-1">
@@ -257,7 +353,6 @@ document.querySelectorAll('.addSVBtn').forEach(btn => {
         selectedLichThiId = this.getAttribute('data-id');
         document.getElementById('lichThiId').value = selectedLichThiId;
 
-        // Reset modal
         document.getElementById('mssvInput').value = "";
         document.getElementById('studentNames').innerHTML = "<i>Nhập MSSV để hiển thị...</i>";
 
@@ -309,7 +404,6 @@ document.getElementById('addStudentsBtn').addEventListener('click', async functi
 
     if (!confirmResult.isConfirmed) return;
 
-    // Gửi request lên server
     const res = await fetch(`/lichthi/${selectedLichThiId}/add-students`, {
         method: "POST",
         headers: { 
@@ -329,7 +423,6 @@ document.getElementById('addStudentsBtn').addEventListener('click', async functi
         return;
     }
 
-    // Hiển thị popup kết quả
     const result = await Swal.fire({
         title: "Kết quả thêm sinh viên",
         html: `
@@ -342,7 +435,7 @@ document.getElementById('addStudentsBtn').addEventListener('click', async functi
         icon: "success"
     });
 
-    // Nếu bấm xem sinh viên bỏ qua → đợi popup đó đóng
+    // Nếu bấm xem sinh viên bỏ qua thì đợi popup đó đóng
     if (result.dismiss === Swal.DismissReason.cancel) {
         await Swal.fire({
             title: 'Sinh viên bị bỏ qua',
@@ -352,7 +445,6 @@ document.getElementById('addStudentsBtn').addEventListener('click', async functi
         });
     }
 
-    // Sau khi popup chính hoặc popup xem sinh viên bị bỏ qua đóng → reload
     location.reload();
 });
 

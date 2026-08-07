@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container mt-4">
-    <h2>Phân công môn: {{ $lichThi->ten_mon }} --- Phòng: {{$lichThi->phong}}</h2>
+    <h2>Phân công môn: {{ $lichThi->MonHoc->ten_mon }} --- Phòng: {{$lichThi->phong}}</h2>
     <a href="{{ route('lichthi.index') }}" class="btn btn-secondary">Trở lại</a>
     {{-- Hiển thị thông báo --}}
     @if(session('success'))

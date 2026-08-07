@@ -1,6 +1,11 @@
 @extends('layouts.main-layout')
 
 @section('content')
+@if(session('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
 <div class="container mt-4">
     <h2>Phân công giảng viên: {{ $giangvien->ho_ten }}</h2>
 
@@ -128,7 +133,7 @@ document.querySelectorAll('.assignForm').forEach(form => {
         const lichId = this.dataset.lichid;
         const csrfToken = this.querySelector('[name=_token]').value;
 
-        const res = await fetch(`/giangvien/{{ $giangvien->id }}/assign/${lichId}`, {
+        const res = await fetch(`/admin/giangvien/{{ $giangvien->id }}/assign/${lichId}`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': csrfToken,
@@ -143,7 +148,7 @@ document.querySelectorAll('.assignForm').forEach(form => {
         } else if(data.status === 'conflict'){
             Swal.fire('Trùng lịch', data.message, 'warning');
         } else {
-            Swal.fire('Lỗi', 'Không thể phân công', 'error');
+            Swal.fire('Lỗi', data.message, 'error');
         }
     });
 });
@@ -165,7 +170,7 @@ document.querySelectorAll('.btn-unassign').forEach(btn => {
         if(!confirm.isConfirmed) return;
 
         const res = await fetch(
-            `/giangvien/{{ $giangvien->id }}/unassign/${lichId}`, 
+            `/admin/giangvien/{{ $giangvien->id }}/unassign/${lichId}`, 
             {
                 method: 'DELETE',
                 headers: {

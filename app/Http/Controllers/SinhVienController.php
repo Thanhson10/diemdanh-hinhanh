@@ -11,20 +11,34 @@ class SinhVienController extends Controller
 {
         private $bucket = 'diemdanh-sinhvien';
         private $collection = 'sinhvien_faces';
-    // Danh sách sinh viên
-   public function index(Request $request)
+    
+    public function index(Request $request)
     {
-        $query = SinhVien::query();
+        $query = SinhVien::query()
+            ->with(['anhDaTrain']); 
 
-        // Nếu có tìm kiếm
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where('ma_sv', 'like', "%{$search}%")
-                ->orWhere('ho_ten', 'like', "%{$search}%")
-                ->orWhere('lop', 'like', "%{$search}%");
+        if ($request->filled('ma_sv')) {
+            $query->where('ma_sv', 'like', '%' . $request->ma_sv . '%');
         }
 
-        $sinhviens = $query->orderBy('ma_sv', 'asc')->paginate(20);
+        if ($request->filled('ho_ten')) {
+            $query->where('ho_ten', 'like', '%' . $request->ho_ten . '%');
+        }
+
+        if ($request->filled('lop')) {
+            $query->where('lop', 'like', '%' . $request->lop . '%');
+        }
+
+         if ($request->has('chua_co_anh')) {
+            $query->whereDoesntHave('anhDaTrain');
+        }
+
+        if ($request->has('co_anh')) {
+            $query->whereHas('anhDaTrain');
+        }
+
+        $sinhviens = $query->orderBy('ma_sv', 'desc')->paginate(10)->withQueryString();;
+
         return view('sinhvien.index', compact('sinhviens'));
     }
 
@@ -38,24 +52,21 @@ class SinhVienController extends Controller
    public function store(Request $request)
     {
         $request->validate([
-            'ma_sv'   => 'required|unique:sinh_viens',
+            'ma_sv'   => 'required|size:10|unique:sinh_viens',
             'ho_ten'  => 'required',
-            'lop_y'   => 'required|digits:2',
-            'lop_z'   => 'required|digits:2',
+            'lop'   => 'required',
             'email'   => 'required|email|unique:sinh_viens',
         ], [
+            'ma_sv.required' => '⚠️ Không được để trống MSSV!',
+            'email.required' => '⚠️ Email không được để trống!',
             'ma_sv.unique' => '⚠️ Mã số sinh viên đã tồn tại!',
             'email.unique' => '⚠️ Email đã tồn tại!',
+            'lop.required' => '⚠️ Không được để trống lớp!',
+            'ho_ten.required' => '⚠️ Vui lòng nhập họ tên!',
+            'ma_sv.size'     => '⚠️ MSSV phải đủ 10 ký tự!',
         ]);
 
-        /** Lớp */
-        $folder = strtolower("d{$request->lop_y}_th{$request->lop_z}");
-        $lop    = "D{$request->lop_y}_TH{$request->lop_z}";
-
-        /** Chuẩn bị data */
-        $data = $request->except(['lop_y', 'lop_z']);
-        $data['lop'] = $lop;
-
+        $data = $request->only(['ma_sv', 'ho_ten', 'lop', 'email']);
         SinhVien::create($data);
 
         return redirect()
@@ -68,14 +79,7 @@ class SinhVienController extends Controller
     public function edit($id)
     {
         $sinhvien = SinhVien::findOrFail($id);
-        // Ví dụ: D23_TH09
-        $lop = $sinhvien->lop;
-        // D23_TH09 → 23
-        $lop_y = substr($lop, 1, 2);
-        // D23_TH09 → 09
-        $lop_z = substr($lop, -2);
-
-        return view('sinhvien.edit', compact('sinhvien', 'lop_y', 'lop_z'),['hideSearch' => true]);
+        return view('sinhvien.edit', compact('sinhvien'),['hideSearch' => true]);
     }
 
 
@@ -86,36 +90,30 @@ class SinhVienController extends Controller
 
         $oldMaSv = $sinhvien->ma_sv;
 
-        // Lớp cũ
-        preg_match('/D(\d+)_TH(\d+)/', $sinhvien->lop, $matches);
-        $oldFolder = strtolower("d{$matches[1]}_th{$matches[2]}");
-
         $request->validate([
             'ma_sv' => [
                 'required',
+                'size:10',
                 Rule::unique('sinh_viens')->ignore($sinhvien->id),
             ],
             'ho_ten' => 'required',
-            'lop_y'  => 'required|digits:2',
-            'lop_z'  => 'required|digits:2',
+            'lop'  => 'required',
             'email'  => [
                 'required',
                 'email',
                 Rule::unique('sinh_viens')->ignore($sinhvien->id),
             ],
         ], [
+            'ma_sv.required' => '⚠️ Không được để trống MSSV!',
+            'email.required' => '⚠️ Email không được để trống!',
             'ma_sv.unique' => '⚠️ Mã số sinh viên đã tồn tại!',
             'email.unique' => '⚠️ Email đã tồn tại!',
+            'lop.required' => '⚠️ Không được để trống lớp!',
+            'ho_ten.required' => '⚠️ Vui lòng nhập họ tên!',
+            'ma_sv.size'     => '⚠️ MSSV phải đủ 10 ký tự!',
         ]);
 
-        /** Lớp mới */
-        $newFolder = strtolower("d{$request->lop_y}_th{$request->lop_z}");
-        $lop       = "D{$request->lop_y}_TH{$request->lop_z}";
-
-        /** Chuẩn bị data */
-        $data = $request->except(['lop_y', 'lop_z']);
-        $data['lop'] = $lop;
-
+        $data = $request->only(['ma_sv', 'ho_ten', 'lop', 'email']);
         $sinhvien->update($data);
 
         return redirect()
@@ -133,35 +131,12 @@ class SinhVienController extends Controller
                 return redirect()->back()->with('error', 'Không thể xóa! Sinh viên này đã có dữ liệu điểm danh trong lịch thi.');
             }
 
-            if ($sv->da_train_khuon_mat) {
-                $lambdaUrl = env('LAMBDA_DELETE_URL');
-
-                $response = Http::post($lambdaUrl, [
-                    'bucket'          => $this->bucket,
-                    'collectionId'    => $this->collection,
-                    'externalImageId' => $sv->ma_sv,
-                ]);
-
-                if (!$response->ok()) {
-                    return redirect()->back()->with('error', 'Không thể kết nối đến AWS Lambda để xóa ảnh khuôn mặt.');
-                }
-
-                $data = $response->json();
-                if (isset($data['body'])) {
-                    $data = json_decode($data['body'], true);
-                }
-
-                if (empty($data['success'])) {
-                    return redirect()->back()->with('error', 'Lỗi từ AWS khi xóa mặt: ' . ($data['message'] ?? 'Không xác định'));
-                }
-            }
-            // XÓA SINH VIÊN TRONG DATABASE
             $sv->delete();
-
-            return redirect()->back()->with('success', 'Đã xóa sinh viên và toàn bộ dữ liệu khuôn mặt thành công!');
+            
+            return redirect()->back()->with('success', 'Đã xóa sinh viên thành công.');
 
         } catch (\Throwable $e) {
-            return redirect()->back()->with('error', 'Đã xảy ra lỗi hệ thống: ' . $e->getMessage());
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 

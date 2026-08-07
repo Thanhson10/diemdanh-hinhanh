@@ -7,10 +7,18 @@ use App\Http\Controllers\MonHocController;
 use App\Http\Controllers\LichThiController;
 use App\Http\Controllers\RekognitionController;
 use App\Http\Controllers\AuthController;
+use App\Models\SinhVien;
+use App\Exports\MauSinhVienExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 Route::get('/dangnhap', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/forgot-password', [AuthController::class, 'showForgotForm'])
+    ->name('password.request');
+
+Route::post('/forgot-password', [AuthController::class, 'resetPassword'])
+    ->name('password.email');
 
 use App\Http\Controllers\HomeController;
 
@@ -18,7 +26,7 @@ use App\Http\Controllers\DiemDanhController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home.index');
 
-Route::middleware('auth:giangvien')->group(function () {
+Route::middleware(['auth:giangvien','checkactive'])->group(function () {
     //test đăng nhập
     Route::get('/test-auth', function () {
     dd(Auth::guard('giangvien')->check());
@@ -38,16 +46,27 @@ Route::middleware('auth:giangvien')->group(function () {
     
     Route::resource('giangvien', GiangVienController::class);
     
+    Route::get('/sinhvien/{id}/images', function ($id) {
+        $sv = SinhVien::findOrFail($id);
+
+        return $sv->danhSachAnhTrain->map(function ($img) {
+            return [
+                'id' => $img->id,
+                'url' => asset($img->hinh_anh_url),
+                'trang_thai' => $img->trang_thai
+            ];
+        });
+    });
 
     //Trang upload khuôn mặt sinh viên
     Route::get('/rekognition/upload', [RekognitionController::class, 'uploadForm'])->name('rekognition.uploadForm');
     Route::post('/rekognition/upload', [RekognitionController::class, 'train'])->name('rekognition.train');
-    Route::delete('/rekognition/delete/{studentId}', [RekognitionController::class, 'deleteFace'])->name('rekognition.delete');
-    Route::get('/rekognition/delete', function () {
-    return view('rekognition.delete');})->name('rekognition.delete.form');
-
+    Route::delete('/anh-train/{id}', [RekognitionController::class, 'destroyAnhTrain'])->name('anh_train.destroy');
     Route::post('/rekognition/train-ajax', [RekognitionController::class, 'trainAjax'])->name('rekognition.train.ajax');
-    Route::post('/rekognition/retrain', [RekognitionController::class, 'retrainAjax'])->name('rekognition.retrain.ajax');
+
+    Route::get('/download-mau-sinh-vien', function () {
+        return Excel::download(new MauSinhVienExport, 'mau_sinh_vien.xlsx');
+    })->name('download.mau.sinhvien');
    
     Route::get('giangvien/{giangvien}/phancong', [GiangVienController::class, 'phancong'])
     ->name('giangvien.phancong');
@@ -60,6 +79,10 @@ Route::middleware('auth:giangvien')->group(function () {
     Route::get('/lichthi/{id}/ket-qua', [LichThiController::class, 'showKetQua'])->name('lichthi.ketqua');
     Route::get('lichthi/{id}/phancong', [LichThiController::class, 'phanCongForm'])->name('lichthi.phancong');
     Route::post('lichthi/{id}/phancong', [LichThiController::class, 'phanCongSave'])->name('lichthi.phancong.save');
+
+    Route::patch('/giangvien/{id}/toggle', [GiangVienController::class, 'toggle'])
+    ->name('giangvien.toggle');
+    
     });
 
     Route::post('/rekognition/compare-many/{lichThi}', [RekognitionController::class, 'compareMany'])
@@ -71,6 +94,7 @@ Route::middleware('auth:giangvien')->group(function () {
     //Route::post('/lichthi/import', [LichThiController::class, 'import'])->name('lichthi.import');
 
     Route::resource('diemdanh', DiemDanhController::class)->only(['index', 'show']);
+    
     //Route::post('/diemdanh/import', [DiemDanhController::class, 'import'])->name('diemdanh.import');
     Route::get('/lichthi/{id}/export', [LichThiController::class, 'export'])->name('lichthi.export');
     //Route::get('/rekognition/create', [RekognitionController::class, 'createCollection']);
@@ -98,6 +122,8 @@ Route::middleware('auth:giangvien')->group(function () {
         
     Route::get('/rekognition/{lichThi}/attendance-data', [RekognitionController::class, 'getAttendanceData'])
     ->name('rekognition.getAttendanceData');
+
+    Route::get('/sinhvien/{id}/anh-train', [DiemDanhController::class, 'anhTrain']);
 });
 
 

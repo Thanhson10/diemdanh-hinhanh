@@ -18,34 +18,32 @@ class SinhVienImport implements
 {
     use SkipsFailures;
 
-    /**
-     * Bỏ dòng tiêu đề
-     */
     public function startRow(): int
     {
-        return 2;
+        return 3;
     }
 
-    /**
-     * Map dữ liệu từng dòng Excel → DB
-     */
+    public function prepareForValidation($data, $index)
+    {
+        $data[0] = strtoupper(trim($data[0] ?? ''));
+        $data[3] = trim($data[3] ?? '');
+
+        return $data;
+    }
+
     public function model(array $row)
     {
-        $maSv = strtoupper(trim($row[0]));
-        $lop  = strtolower(trim($row[3]));
+        $maSv = $row[0];
+        $lop  = strtoupper($row[3]);
 
         return new SinhVien([
-            'ma_sv'    => $maSv,
-            'ho_ten'   => trim($row[1] . ' ' . $row[2]),
-            'lop'      => trim($row[3]),
-            'email'    => strtolower($maSv) . '@student.stu.edu.vn',
-            'hinh_anh' => "uploads/hinhanh_sv/{$lop}/{$maSv}.jpg",
+            'ma_sv'  => $maSv,
+            'ho_ten' => trim($row[1] . ' ' . $row[2]),
+            'lop'    => $lop,
+            'email'  => strtolower($maSv) . '@student.stu.edu.vn',
         ]);
     }
 
-    /**
-     * Validate từng dòng
-     */
     public function rules(): array
     {
         return [
@@ -57,14 +55,20 @@ class SinhVienImport implements
         ];
     }
 
-    /**
-     * Tên cột hiển thị khi báo lỗi
-     */
     public function customValidationAttributes()
     {
         return [
             '0' => 'MSSV',
             '3' => 'Lớp',
+        ];
+    }
+
+    public function customValidationMessages()
+    {
+        return [
+            '0.required' => 'MSSV không được để trống',
+            '0.unique'   => 'MSSV đã tồn tại trong hệ thống',
+            '3.required' => 'Lớp không được để trống',
         ];
     }
 }

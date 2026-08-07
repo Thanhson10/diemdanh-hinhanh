@@ -74,6 +74,96 @@
                 </tbody>
 
             </table>
+            {{-- Hiển thị phân trang --}}
+            @if($monHocs->hasPages())
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm mb-0">
+                        {{-- Previous Page Link --}}
+                        @if($monHocs->onFirstPage())
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="fas fa-chevron-left"></i>
+                                </span>
+                            </li>
+                        @else
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $monHocs->previousPageUrl() }}" aria-label="Previous">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        @endif
+
+                        {{-- Pagination Elements --}}
+                        @php
+                            $current = $monHocs->currentPage();
+                            $last = $monHocs->lastPage();
+                            $start = max(1, $current - 2);
+                            $end = min($last, $current + 2);
+                        @endphp
+
+                        {{-- First Page Link --}}
+                        @if($start > 1)
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $monHocs->url(1) }}">1</a>
+                            </li>
+                            @if($start > 2)
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            @endif
+                        @endif
+
+                        {{-- Page Number Links --}}
+                        @for($i = $start; $i <= $end; $i++)
+                            @if($i == $current)
+                                <li class="page-item active">
+                                    <span class="page-link">{{ $i }}</span>
+                                </li>
+                            @else
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ $monHocs->url($i) }}">{{ $i }}</a>
+                                </li>
+                            @endif
+                        @endfor
+
+                        {{-- Last Page Link --}}
+                        @if($end < $last)
+                            @if($end < $last - 1)
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            @endif
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $monHocs->url($last) }}">{{ $last }}</a>
+                            </li>
+                        @endif
+
+                        {{-- Next Page Link --}}
+                        @if($monHocs->hasMorePages())
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $monHocs->nextPageUrl() }}" aria-label="Next">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        @else
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="fas fa-chevron-right"></i>
+                                </span>
+                            </li>
+                        @endif
+                    </ul>
+                </nav>
+            </div>
+
+            {{-- Hiển thị thông tin kết quả --}}
+            <div class="text-center text-muted mt-2 small">
+                Hiển thị {{ ($monHocs->currentPage() - 1) * $monHocs->perPage() + 1 }} 
+                đến {{ min($monHocs->currentPage() * $monHocs->perPage(), $monHocs->total()) }} 
+                của {{ $monHocs->total() }} kết quả
+            </div>
+            @endif
         </div>
     </div>
 </div>

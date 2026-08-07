@@ -17,6 +17,7 @@ class GiangVien extends Authenticatable
         'email',
         'password', 
         'vai_tro',
+        'is_active',
     ];
 
     // Ẩn cột password khi trả dữ liệu JSON

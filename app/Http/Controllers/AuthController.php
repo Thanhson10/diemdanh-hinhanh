@@ -5,6 +5,9 @@ use App\Models\GiangVien;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ResetPasswordMail;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -23,8 +26,20 @@ class AuthController extends Controller
         $giangvien = GiangVien::where('email', $credentials['email'])->first();
 
         if ($giangvien && Hash::check($credentials['password'], $giangvien->password)) {
+            
+            if (!$giangvien->is_active) {
+                return back()->withErrors([
+                    'login_error' => 'Tài khoản đã bị vô hiệu hóa.',
+                ])->withInput();
+            }
+
             Auth::guard('giangvien')->login($giangvien);
             $request->session()->regenerate();
+            if (session('reset_password')) {
+                session()->forget('reset_password');
+                return redirect()->route('home.index')
+                    ->with('warning', 'Bạn vừa reset mật khẩu, vui lòng đổi lại để bảo mật!');
+            }
             return redirect()->route('home.index');
         }
 
@@ -49,7 +64,6 @@ class AuthController extends Controller
         return view('auth.profile', compact('user'),['hideSearch' => true]);
     }
 
-        // Hiển thị form đổi mật khẩu
     public function showChangePasswordForm()
     {
         $user = Auth::guard('giangvien')->user();
@@ -83,7 +97,44 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        // Chuyển về trang login
-        return redirect()->route('login')->with('success', '🔒 Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
+        return redirect()->route('login')->with('success', '🔒 Đổi mật khẩu thành công! Vui lòng đăng nhập lại.')
+        ->withInput([
+            'email' => $user->email
+        ]);
+    }
+
+    public function showForgotForm()
+    {
+        return view('auth.forgot-password');
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        // tìm giảng viên theo email
+        $giangVien = GiangVien::where('email', $request->email)->first();
+
+        if (!$giangVien) {
+            return back()->withErrors(['email' => 'Không tồn tại tài khoản này!'])
+            ->withInput();
+        }
+
+        // tạo mật khẩu mới
+        $newPassword = Str::random(10);
+
+        // lưu password mới
+        $giangVien->password = Hash::make($newPassword);
+        $giangVien->save();
+
+        // gửi mail
+        Mail::to($giangVien->email)->send(new ResetPasswordMail($newPassword));
+
+        session(['reset_password' => true]);
+        return redirect()->route('login')
+        ->with('success', 'Mật khẩu mới đã gửi qua email')
+        ->withInput();
     }
 }

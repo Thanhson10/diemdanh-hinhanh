@@ -21,7 +21,7 @@ class MonHocController extends Controller
                 ->orWhere('ten_mon', 'like', "%{$search}%");
         }
 
-        $monHocs = $query->orderBy('id', 'desc')->get(); // Sắp xếp mới nhất lên trên
+        $monHocs = $query->orderBy('id', 'desc')->paginate(10)->withQueryString();
 
         return view('monhoc.index', compact('monHocs'),['hideSearch' => true]);
     }

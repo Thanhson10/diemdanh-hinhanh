@@ -32,6 +32,16 @@
                 <div class="text-danger mt-1">{{ $message }}</div>
             @enderror
         </div>
+
+        <div class="mb-3 col-md-2">
+            <label>Thời lượng thi (phút)</label>
+            <input type="number" name="thoi_luong_thi" min="1" max="300" class="form-control" 
+                value="{{ $lichthi->thoi_luong_thi }}" required>
+            @error('thoi_luong_thi')
+                <div class="text-danger mt-1">{{ $message }}</div>
+            @enderror
+        </div>
+
         @php
             $phong = $lichthi->phong;   
             $typeOld = substr($phong, 0, 1);

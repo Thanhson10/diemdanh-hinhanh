@@ -12,6 +12,13 @@
             {{ session('success') }}
         </div>
     @endif
+
+    @if(session('warning'))
+        <div class="alert alert-warning">
+            {{ session('warning') }}
+        </div>
+    @endif
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>📚 Danh sách sinh viên</h2>
         
@@ -24,44 +31,125 @@
         @endif
     </div>
 
-    @if(request('search'))
-        <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
-            <span>Kết quả tìm kiếm: "{{ request('search') }}"</span>
-            <a href="{{ route('sinhvien.index') }}" class="btn btn-sm btn-outline-secondary">Xóa lọc</a>
-        </div>
-    @endif
-
     @if(Auth::guard('giangvien')->check() && Auth::guard('giangvien')->user()->vai_tro === 'admin')
     <div class="card mb-4">
         <div class="card-body">
-            <h5 class="card-title">Import sinh viên từ Excel</h5>
-            <form action="{{ route('sinhvien.import') }}" method="POST" enctype="multipart/form-data" class="d-flex gap-2 align-items-center">
-                @csrf
-                <input type="file" name="file" accept=".xlsx,.xls,.csv" class="form-control form-control-sm w-auto" required>
-                <button type="submit" class="btn btn-success btn-sm">
-                    <i class="fas fa-file-import"></i> Import Excel
-                </button>
-            </form>
-            @if(session('import_failures'))
-            <div class="alert alert-warning">
-                <h6 class="mb-2">⚠️ Các dòng import bị lỗi:</h6>
-                <ul class="mb-0">
+           
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <!-- LEFT: FORM IMPORT -->
+                <form action="{{ route('sinhvien.import') }}" method="POST" enctype="multipart/form-data" 
+                    class="d-flex gap-2 align-items-center">
+                    @csrf
+
+                    <input type="file" name="file" accept=".xlsx,.xls,.csv" 
+                        class="form-control form-control-sm" required>
+
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="fas fa-file-import"></i> Import Excel
+                    </button>
+                </form>
+
+                <!-- RIGHT: DOWNLOAD TEMPLATE -->
+                <a href="{{ route('download.mau.sinhvien') }}" 
+                class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-download"></i> Tải file mẫu
+                </a>
+
+            </div>
+           @if(session('import_failures'))
+            <div class="alert alert-warning" style="max-height: 300px; overflow-y: auto;">
+                <strong>Các dòng bị lỗi: (dòng 1 và 2 là tiêu đề)</strong>
+                <ul>
                     @foreach(session('import_failures') as $failure)
+                        @php
+                            $row = $failure->values();
+
+                            $maSv = $row[0] ?? '';
+                            $hoTen = trim(($row[1] ?? '') . ' ' . ($row[2] ?? ''));
+                            $lop = $row[3] ?? '';
+                        @endphp
+
                         <li>
-                            <strong>Dòng {{ $failure->row() }}:</strong>
-                            {{ implode(', ', $failure->errors()) }}
+                            <b>Dòng {{ $failure->row() }}:</b>
+
+                            @foreach($failure->errors() as $error)
+                                {{ $error }}
+                            @endforeach
+
                             <br>
-                            <small class="text-muted">
-                                Dữ liệu: {{ json_encode($failure->values(), JSON_UNESCAPED_UNICODE) }}
+                            <small>
+                                (MSSV: {{ $maSv }} | Họ tên: {{ $hoTen }} | Lớp: {{ $lop }})
                             </small>
                         </li>
                     @endforeach
                 </ul>
             </div>
-            @endif
+        @endif
         </div>
     </div>
     @endif
+
+    <form method="GET" action="{{ route('sinhvien.index') }}" class="mb-3">
+        <div class="row g-2">
+            <div class="col-md-3">
+                <input type="text" name="ma_sv" class="form-control"
+                    placeholder="Mã sinh viên"
+                    value="{{ request('ma_sv') }}">
+            </div>
+
+            <div class="col-md-3">
+                <input type="text" name="ho_ten" class="form-control"
+                    placeholder="Họ tên"
+                    value="{{ request('ho_ten') }}">
+            </div>
+
+            <div class="col-md-3">
+                <input type="text" name="lop" class="form-control"
+                    placeholder="Lớp"
+                    value="{{ request('lop') }}">
+            </div>
+
+            <div class="col-md-2 d-flex align-items-center">
+                <input type="checkbox" name="chua_co_anh" value="1"
+                    {{ request('chua_co_anh') ? 'checked' : '' }}>
+                <label class="ms-2">Chưa có ảnh</label>
+            </div>
+
+            <!-- <div class="col-md-3">
+                <label class="form-label mb-1">Trạng thái ảnh</label>
+
+                <div class="d-flex gap-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="trang_thai_anh" value=""
+                            {{ request('trang_thai_anh') == null ? 'checked' : '' }}>
+                        <label class="form-check-label">Tất cả</label>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="trang_thai_anh" value="co_anh"
+                            {{ request('trang_thai_anh') == 'co_anh' ? 'checked' : '' }}>
+                        <label class="form-check-label text-success">Đã có ảnh</label>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="trang_thai_anh" value="chua_co_anh"
+                            {{ request('trang_thai_anh') == 'chua_co_anh' ? 'checked' : '' }}>
+                        <label class="form-check-label text-danger">Chưa có ảnh</label>
+                    </div>
+                </div>
+            </div> -->
+
+            <div class="col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-primary w-100">
+                    Lọc
+                </button>
+                <a href="{{ route('sinhvien.index') }}" class="btn btn-secondary">
+                    Reset
+                </a>
+            </div>
+            
+        </div>
+    </form>
 
     <!-- Desktop Table -->
     <div class="d-none d-md-block">
@@ -87,24 +175,48 @@
                         <td><span class="badge bg-info">{{ $sv->lop }}</span></td>
                         <td>{{ $sv->email }}</td>
                         <td>
-                            @if($sv->da_train_khuon_mat && $sv->hinh_anh)
-                                <img src="{{ asset($sv->hinh_anh) }}" 
-                                    width="60" 
-                                    height="60" 
-                                    class="rounded-circle object-fit-cover hover-zoom" 
-                                    style="object-fit: cover; cursor: pointer;"
+                            @php
+                                // Lấy danh sách ảnh đã train của sv
+                                $anhTrain = $sv->anhDaTrain;
+                                $count = $anhTrain->count();
+                                $latest = $anhTrain->last(); // Lấy ảnh mới nhất
+                            @endphp
+
+                            @if($count > 0)
+                                <div class="position-relative d-inline-block" 
+                                    style="cursor: pointer;" 
                                     data-bs-toggle="modal" 
-                                    data-bs-target="#imageModal{{ $sv->id }}"
-                                    title="Xem ảnh">
+                                    data-bs-target="#imageModal{{ $sv->id }}">
+                                    
+                                    <!-- Ảnh đại diện -->
+                                    <img src="{{ asset($latest->hinh_anh_url) }}" 
+                                        width="60" 
+                                        height="60" 
+                                        class="rounded-circle object-fit-cover border" 
+                                        style="object-fit: cover;">
+
+                                    <!-- Badge hiển thị số lượng ảnh phụ -->
+                                    @if($count > 1)
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                                            style="font-size: 10px; border: 2px solid white;">
+                                            +{{ $count - 1 }}
+                                        </span>
+                                    @endif
+                                </div>
                             @else
-                                <span class="text-muted small">Chưa có ảnh</span>
+                                <span class="text-muted small"
+                                    style="cursor:pointer;"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#imageModal{{ $sv->id }}">
+                                    Chưa có ảnh
+                                </span>
                             @endif
                         </td>
                         
                         @if(Auth::guard('giangvien')->check() && Auth::guard('giangvien')->user()->vai_tro === 'admin')
                         <td>
                             <div class="d-flex gap-2">
-                                <a href="{{ route('sinhvien.edit', $sv->id) }}" class="btn btn-warning btn-sm">
+                                <a href="{{ route('sinhvien.edit', $sv->id) }}?{{ http_build_query(request()->query()) }}" class="btn btn-warning btn-sm">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <form action="{{ route('sinhvien.destroy', $sv->id) }}" method="POST" class="d-inline">
@@ -155,17 +267,41 @@
                         <td><span class="badge bg-info">{{ $sv->lop }}</span></td>
                         <td>{{ $sv->email }}</td>
                         <td>
-                            @if($sv->hinh_anh)
-                                <img src="{{ asset($sv->hinh_anh) }}" 
-                                    width="60" 
-                                    height="60" 
-                                    class="rounded-circle object-fit-cover hover-zoom" 
-                                    style="object-fit: cover; cursor: pointer;"
+                            @php
+                                // Lấy danh sách ảnh đã train của sv
+                                $anhTrain = $sv->anhDaTrain;
+                                $count = $anhTrain->count();
+                                $latest = $anhTrain->last(); // Lấy ảnh mới nhất
+                            @endphp
+
+                            @if($count > 0)
+                                <div class="position-relative d-inline-block" 
+                                    style="cursor: pointer;" 
                                     data-bs-toggle="modal" 
-                                    data-bs-target="#imageModal{{ $sv->id }}"
-                                    title="Xem ảnh">
+                                    data-bs-target="#imageModal{{ $sv->id }}">
+                                    
+                                    <!-- Ảnh đại diện -->
+                                    <img src="{{ asset($latest->hinh_anh_url) }}" 
+                                        width="60" 
+                                        height="60" 
+                                        class="rounded-circle object-fit-cover border" 
+                                        style="object-fit: cover;">
+
+                                    <!-- Badge hiển thị số lượng ảnh phụ -->
+                                    @if($count > 1)
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                                            style="font-size: 10px; border: 2px solid white;">
+                                            +{{ $count - 1 }}
+                                        </span>
+                                    @endif
+                                </div>
                             @else
-                                <span class="text-muted small">Chưa có ảnh</span>
+                                <span class="text-muted small"
+                                    style="cursor:pointer;"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#imageModal{{ $sv->id }}">
+                                    Chưa có ảnh
+                                </span>
                             @endif
                         </td>
                         
@@ -207,26 +343,43 @@
 
 
     @foreach($sinhviens as $sv)
-        @if($sv->hinh_anh)
             <div class="modal fade" id="imageModal{{ $sv->id }}" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Ảnh sinh viên: {{ $sv->ho_ten }}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <div class="modal-header d-flex justify-content-between align-items-center">
+    
+                            <h5 class="modal-title mb-0">
+                                Kho ảnh của: {{ $sv->ho_ten }}
+                            </h5>
+
+                            <div class="d-flex align-items-center gap-2">
+                                
+                                <button class="btn btn-sm btn-primary"
+                                        onclick="openTrainModal('{{ $sv->ma_sv }}', '{{ $sv->id }}')">
+                                    <i class="fas fa-plus"></i> Train thêm
+                                </button>
+
+                                <!-- Nút đóng -->
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+
                         </div>
-                        <div class="modal-body text-center">
-                            <img src="{{ asset($sv->hinh_anh) }}" 
-                                class="img-fluid rounded" 
-                                alt="{{ $sv->ho_ten }}"
-                                style="max-height: 70vh; object-fit: contain;">
+                        <div class="modal-body">
+                            <div class="row g-3" id="imageContainer{{ $sv->id }}">
+                                <div class="text-center text-muted">Đang tải...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        @endif
     @endforeach
-
+    <div class="modal fade" id="previewImageModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-transparent border-0">
+                <img id="previewImage" src="" class="w-100 rounded">
+            </div>
+        </div>
+    </div>
     {{-- Hiển thị phân trang --}}
     @if($sinhviens->hasPages())
     <div class="d-flex justify-content-center mt-4">
@@ -318,6 +471,175 @@
     </div>
     @endif
 </div>
+
+<!-- modal upload ảnh -->
+<div class="modal fade" id="trainModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Train ảnh sinh viên</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="trainForm">
+                    @csrf
+                    <input type="hidden" name="ma_sv" id="ma_sv">
+
+                    <input type="file" name="hinh_anh" class="form-control mb-3" required>
+
+                    <button type="submit" class="btn btn-success w-100">
+                        Upload & Train
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('[id^="imageModal"]').forEach(modal => {
+        modal.addEventListener('show.bs.modal', function () {
+            const svId = this.id.replace('imageModal', '');
+            loadImages(svId);
+        });
+
+        modal.addEventListener('hidden.bs.modal', function () {
+            const svId = this.id.replace('imageModal', '');
+            resetImages(svId);
+        });
+    });
+
+    function previewImage(url) {
+        document.getElementById('previewImage').src = url;
+    }
+
+    window.csrfToken = "{{ csrf_token() }}";
+
+    async function loadImages(svId) {
+        const container = document.getElementById('imageContainer' + svId);
+
+        if (!container) return;
+
+        container.innerHTML = `
+        <div class="text-center w-100 py-3">
+            <div class="spinner-border text-primary"></div>
+        </div>`;
+
+        const res = await fetch(`/admin/sinhvien/${svId}/images`);
+
+        if (!res.ok) {
+            container.innerHTML = "Lỗi tải ảnh!";
+            return;
+        }
+
+        const data = await res.json();
+
+        let html = '';
+
+        if (data.length === 0) {
+                container.innerHTML = "<p class='text-center'>Chưa có ảnh</p>";
+                return;
+            }
+
+        data.forEach(img => {
+            html += `
+            <div class="col-md-4 col-sm-6">
+                <div class="card h-100">
+                    <img src="${img.url}" 
+                        class="card-img-top"
+                        style="height: 200px; object-fit: cover; cursor: pointer;"
+                        onclick="previewImage('${img.url}')"
+                        data-bs-toggle="modal"
+                        data-bs-target="#previewImageModal">
+
+                    <div class="card-body p-2 text-center">
+                        <small class="text-muted d-block mb-2">
+                            Trạng thái:
+                            <span class="badge ${img.trang_thai === 'trained' ? 'bg-success' : 'bg-warning'}">
+                                ${img.trang_thai}
+                            </span>
+                        </small>
+
+                        <button type="button"
+                            class="btn btn-sm btn-outline-danger w-100"
+                            onclick="deleteImage(event, ${img.id}, ${svId})">
+                            Xóa
+                        </button>
+                    </div>
+                </div>
+            </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        container.dataset.loaded = true;
+    }
+
+    function openTrainModal(ma_sv, svId){
+        document.getElementById('ma_sv').value = ma_sv;
+        document.getElementById('trainForm').dataset.svId = svId;
+        new bootstrap.Modal(document.getElementById('trainModal')).show();
+    }
+
+    document.getElementById('trainForm').addEventListener('submit', async function(e){
+        e.preventDefault();
+
+        let formData = new FormData(this);
+
+        try {
+            const res = await fetch("{{ route('rekognition.train.ajax') }}", {
+                method: "POST",
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                }
+            });
+
+            const data = await res.json();
+
+            alert(data.message);
+
+            if(data.success){
+                const svId = document.getElementById('trainForm').dataset.svId;
+
+                await new Promise(r => setTimeout(r, 500));
+
+                await loadImages(svId);
+
+                bootstrap.Modal.getInstance(document.getElementById('trainModal')).hide();
+            }
+
+        } catch (err) {
+            alert("Lỗi!");
+            console.error(err);
+        }
+    });
+
+    function deleteImage(event, id, svId) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (!confirm("Bạn chắc chắn muốn xóa?")) return;
+
+        fetch(`/admin/anh-train/${id}`, {
+            method: "DELETE",
+            headers: {
+                "X-CSRF-TOKEN": window.csrfToken,
+                "Accept": "application/json"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert("Xóa thành công");
+
+            const container = document.getElementById('imageContainer' + svId);
+            container.dataset.loaded = "";
+            loadImages(svId);
+        });
+    }
+</script>
+
 @endsection
 @push('styles')
 <style>

@@ -8,9 +8,6 @@ use Illuminate\Support\Facades\Auth;
 
 class GiangVienAuth
 {
-    /**
-     * Handle an incoming request.
-     */
     public function handle(Request $request, Closure $next)
     {
         // Kiểm tra nếu giảng viên chưa đăng nhập

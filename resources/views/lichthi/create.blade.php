@@ -35,9 +35,18 @@
 
         <div class="mb-3">
             <label>Giờ thi</label>
-            <input type="time" name="gio_thi" min="07:00" max="20:00" class="form-control" 
+            <input type="time" name="gio_thi" min="00:00" max="23:59" class="form-control" 
                 value="{{ old('gio_thi') }}" required>
             @error('gio_thi')
+                <div class="text-danger mt-1">{{ $message }}</div>
+            @enderror
+        </div>
+
+         <div class="mb-3 col-md-2">
+            <label>Thời lượng thi (phút)</label>
+            <input type="number" name="thoi_luong_thi" min="1" max="300" class="form-control" 
+                value="{{ old('thoi_luong_thi') }}" required>
+            @error('thoi_luong_thi')
                 <div class="text-danger mt-1">{{ $message }}</div>
             @enderror
         </div>

@@ -15,6 +15,7 @@ class LichThi extends Model
         'mon_hoc_id',
         'ngay_thi',
         'gio_thi',
+        'thoi_luong_thi',
         'phong',
         'ky_thi',
         'nam_hoc',
@@ -82,31 +83,22 @@ class LichThi extends Model
 
     public function capNhatTrangThai()
     {
-        $now = \Carbon\Carbon::now();
+        $now = now();
 
-        // Thời điểm bắt đầu thi
-        $thoiGianBatDau = \Carbon\Carbon::parse($this->ngay_thi . ' ' . $this->gio_thi);
+        $batDau = $this->thoi_gian_thi;
+        $ketThuc = $batDau->copy()->addMinutes($this->thoi_luong_thi);
 
-        // Thời điểm kết thúc (sau 1 tiếng)
-        $thoiGianKetThuc = $thoiGianBatDau->copy()->addHour();
-
-        // Trước giờ thi → chưa diễn ra
-        if ($now->lt($thoiGianBatDau)) {
-            if ($this->trang_thai !== 'chua_dien_ra') {
-                $this->update(['trang_thai' => 'chua_dien_ra']);
-            }
+        if ($now->lt($batDau)) {
+            $trangThaiMoi = 'chua_dien_ra';
+        } elseif ($now->between($batDau, $ketThuc)) {
+            $trangThaiMoi = 'dang_dien_ra';
+        } else {
+            $trangThaiMoi = 'da_ket_thuc';
         }
-        // Đang trong thời gian thi → đang diễn ra
-        elseif ($now->between($thoiGianBatDau, $thoiGianKetThuc)) {
-            if ($this->trang_thai !== 'dang_dien_ra') {
-                $this->update(['trang_thai' => 'dang_dien_ra']);
-            }
-        }
-        // Sau 1 tiếng → đã kết thúc
-        else {
-            if ($this->trang_thai !== 'da_ket_thuc') {
-                $this->update(['trang_thai' => 'da_ket_thuc']);
-            }
+
+        if ($this->trang_thai !== $trangThaiMoi) {
+            $this->trang_thai = $trangThaiMoi;
+            $this->save();
         }
     }
 
