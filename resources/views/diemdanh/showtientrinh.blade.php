@@ -9,7 +9,7 @@
     </h2>
 
     <div class="action-buttons mb-2">
-        <a href="{{ route('lichthi.index') }}" class="btn btn-custom btn-secondary">
+        <a href="{{ route('lichthi.index', request()->query()) }}" class="btn btn-custom btn-secondary">
             <i class="fa-solid fa-list"></i> Danh sách lịch thi
         </a>
     </div>
@@ -48,6 +48,7 @@
                         <th>Độ chính xác</th>
                         <th>Thời gian</th>
                         <th>Hình thức</th>
+                        <th>Ghi chú</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -65,6 +66,7 @@
                             <td class="col-dochinhxac">{{ $item->do_chinh_xac ?? '-' }}</td>
                             <td class="col-thoigian">{{ $item->thoi_gian_dd ?? '-' }}</td>
                             <td class="col-hinhthuc">{{ $item->hinh_thuc_dd ?? '-' }}</td>
+                            <td>{{ $item->ghi_chu_text}}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -72,4 +74,63 @@
         </div>
     @endif
 </div>
+<style>
+#scrollTopBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999;
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#scrollTopBtn:hover {
+    background-color: #0b5ed7;
+}
+.action-buttons {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+
+    display: inline-block;  
+    background: transparent; 
+    padding: 0;
+}
+</style>
+<button id="scrollTopBtn" title="Lên đầu trang">
+    <i class="fa-solid fa-arrow-up"></i>
+</button>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const scrollBtn = document.getElementById("scrollTopBtn");
+    
+    // class="content" từ layout
+    const scrollContainer = document.querySelector(".content"); 
+
+    if (scrollContainer) {
+        scrollContainer.addEventListener("scroll", function () {
+            
+            if (scrollContainer.scrollTop > 200) {
+                scrollBtn.style.display = "block";
+            } else {
+                scrollBtn.style.display = "none";
+            }
+        });
+
+        scrollBtn.addEventListener("click", function () {
+            scrollContainer.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        });
+    }
+});
+</script>
 @endsection

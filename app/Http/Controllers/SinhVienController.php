@@ -37,7 +37,7 @@ class SinhVienController extends Controller
             $query->whereHas('anhDaTrain');
         }
 
-        $sinhviens = $query->orderBy('ma_sv', 'desc')->paginate(10)->withQueryString();;
+        $sinhviens = $query->orderBy('id', 'desc')->paginate(10)->withQueryString();;
 
         return view('sinhvien.index', compact('sinhviens'));
     }
@@ -163,11 +163,22 @@ class SinhVienController extends Controller
     }
     public function searchByList(Request $request)
     {
-        $mssv = $request->input('mssv'); // <-- lấy mảng MSSV từ JSON
+        $mssv = $request->input('mssv'); // lấy mảng MSSV từ JSON
 
         $sinhviens = SinhVien::whereIn('ma_sv', $mssv)->get();
 
         return response()->json($sinhviens);
+    }
+    public function anhDaTrain($id){
+        $sv = SinhVien::findOrFail($id);
+        
+        return $sv->anhDaTrain->map(function ($img) {
+            return [
+                'id' => $img->id,
+                'url' => asset($img->hinh_anh_url),
+                'trang_thai' => $img->trang_thai
+            ];
+        });
     }
 }
 

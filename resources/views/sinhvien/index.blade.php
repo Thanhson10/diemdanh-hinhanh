@@ -526,7 +526,9 @@
             <div class="spinner-border text-primary"></div>
         </div>`;
 
-        const res = await fetch(`/admin/sinhvien/${svId}/images`);
+        const url = "{{ route('sinhvien.anhDaTrain', ':id') }}".replace(':id', svId);
+        const res = await fetch(url);
+        // const res = await fetch(`/admin/sinhvien/${svId}/images`);
 
         if (!res.ok) {
             container.innerHTML = "Lỗi tải ảnh!";
@@ -622,7 +624,9 @@
 
         if (!confirm("Bạn chắc chắn muốn xóa?")) return;
 
-        fetch(`/admin/anh-train/${id}`, {
+        const url = "{{ route('anh_train.destroy', ':id') }}".replace(':id', id);
+
+        fetch(url, {
             method: "DELETE",
             headers: {
                 "X-CSRF-TOKEN": window.csrfToken,

@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('anh_train_svs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sinh_vien_id')->constrained('sinh_viens')->onDelete('restrict');
-            $table->string('hinh_anh');
+            $table->string('hinh_anh')->nullable();
             $table->text('face_id')->nullable();
-            $table->string('trang_thai')->default('pending');
+            $table->enum('trang_thai', ['pending', 'trained', 'failed'])
+            ->default('pending');
             $table->timestamps();
         });
     }

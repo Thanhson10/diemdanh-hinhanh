@@ -73,7 +73,7 @@
                         @endif
                     </td>
                     <td>
-                        <a href="{{ route('diemdanh.show', $lich->id) }}" class="btn btn-primary btn-sm">
+                        <a href="{{ route('diemdanh.show', $lich->id) }}?{{ http_build_query(request()->query()) }}" class="btn btn-primary btn-sm">
                             👁️ Xem sinh viên
                         </a>
                     </td>

@@ -85,8 +85,12 @@ async function uploadTrain(url) {
                 logEl.classList.add('text-danger');
             }
         } catch (e) {
-            const logEl = document.getElementById(`log-${index}`);
-            logEl.innerHTML = `🔥 [${stt}/${total}] ${file.name}: Lỗi server`;
+           const logEl = document.getElementById(`log-${index}`);
+            if (!navigator.onLine) {
+                logEl.innerHTML = `❌ [${stt}/${total}] ${file.name}: Mất kết nối internet`;
+            } else {
+                logEl.innerHTML = `🔥 [${stt}/${total}] ${file.name}: Không thể gửi request`;
+            }
             logEl.classList.add('text-danger');
         }
     }

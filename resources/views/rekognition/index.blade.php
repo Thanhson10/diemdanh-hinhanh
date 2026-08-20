@@ -107,6 +107,7 @@
                                             <th>Độ chính xác</th>
                                             <th>Thời gian</th>
                                             <th>Hình thức</th>
+                                            <th>Ghi chú</th>
                                         </tr>
                                     </thead>
                                     <tbody id="attendanceTableBody">
@@ -125,12 +126,35 @@
                                                 <td>
                                                     <input type="checkbox" class="form-check-input toggle-diemdanh"
                                                         data-id="{{ $item->id }}" {{ $item->ket_qua === 'hợp lệ' ? 'checked' : '' }}
-                                                        @if($lichThi->trang_thai === 'da_ket_thuc') disabled @endif>
+                                                        @if($lichThi->trang_thai !== 'dang_dien_ra') disabled @endif>
                                                 </td>
                                                 <td class="col-ketqua">{{ $item->ket_qua ?? 'Chưa có' }}</td>
                                                 <td class="col-dochinhxac">{{ $item->do_chinh_xac ?? '-' }}</td>
                                                 <td class="col-thoigian">{{ $item->thoi_gian_dd ?? '-' }}</td>
                                                 <td class="col-hinhthuc">{{ $item->hinh_thuc_dd ?? '-' }}</td>
+                                                <td>
+                                                    <select class="form-select form-select-sm ghi-chu-select" 
+                                                        data-id="{{ $item->id }}" disabled>
+
+                                                        <option value="">-- Chọn --</option>
+
+                                                        <option value="chua_co_anh"
+                                                            {{ $item->ghi_chu == 'chua_co_anh' ? 'selected' : '' }}>
+                                                            Chưa có ảnh
+                                                        </option>
+
+                                                        <option value="mat_khong_khop"
+                                                            {{ $item->ghi_chu == 'mat_khong_khop' ? 'selected' : '' }}>
+                                                            Không nhận diện được
+                                                        </option>
+
+                                                        <!-- <option value="anh_mo"
+                                                            {{ $item->ghi_chu == 'anh_mo' ? 'selected' : '' }}>
+                                                            Ảnh mờ
+                                                        </option> -->
+
+                                                    </select>
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -149,9 +173,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
 
-    /* -------------------------
-       Adaptive Config - Tự động điều chỉnh theo performance
-    ------------------------- */
+    /* Adaptive Config - Tự động điều chỉnh theo performance */
     let DETECT_INTERVAL_MS = 180;
     let MIN_FACE_PIXELS = 24;
     let DETECTION_CONFIDENCE = 0.45;
@@ -160,9 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let performanceLevel = 'high';
     let isDetecting = false;
 
-    /* -------------------------
-       Các elements và biến 
-    ------------------------- */
+    /* Các elements và biến  */
     const video = document.getElementById('camera');
     const overlayLive = document.getElementById('overlayLive');
     const overlaySnap = document.getElementById('overlaySnapshot');
@@ -191,9 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentFacingMode = 'environment'; // Ưu tiên camera sau
     let btnSwitchCamera = null;
 
-    /* -------------------------
-       Helper: rounded rect 
-    ------------------------- */
+    /* Helper: rounded rect */
     function roundRect(ctx, x, y, w, h, r) {
         ctx.beginPath();
         ctx.moveTo(x + r, y);
@@ -208,9 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ctx.closePath();
     }
 
-    /* -------------------------
-       Tạo nút chuyển đổi camera
-    ------------------------- */
+    /* Tạo nút chuyển đổi camera */
     function createSwitchCameraButton() {
         if (!btnOpen || !btnOpen.parentNode) return;
         
@@ -226,9 +242,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnOpen.parentNode.appendChild(btnSwitchCamera);
     }
 
-    /* -------------------------
-       Hàm chuyển đổi camera
-    ------------------------- */
+    /* Hàm chuyển đổi camera */
     async function switchCamera() {
         if (!stream) return;
         
@@ -261,9 +275,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    /* -------------------------
-       Hàm mở camera stream
-    ------------------------- */
+    /* Hàm mở camera stream */
     async function openCameraStream() {
         const constraints = {
         video: { 
@@ -325,9 +337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    /* -------------------------
-       Load model 
-    ------------------------- */
+    /* Load model  */
     console.log('Đang tải model face detection...');
     try {
         await Promise.all([
@@ -340,9 +350,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    /* -------------------------
-       Performance Detection
-    ------------------------- */
+    /* Performance Detection */
     function detectPerformanceLevel() {
         const startTime = performance.now();
         
@@ -378,9 +386,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     detectPerformanceLevel();
 
-    /* -------------------------
-       Tạo chú thích màu sắc
-    ------------------------- */
+    /* Tạo chú thích màu sắc */
     function createLegend() {
         if (legendContainer) {
             legendContainer.innerHTML = `
@@ -404,9 +410,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     createLegend();
 
-    /* -------------------------
-       Hiển thị loading khi mở camera
-    ------------------------- */
+    /* Hiển thị loading khi mở camera */
     function showCameraLoading() {
         loadingOverlay.classList.remove('d-none');
         loadingOverlay.querySelector('p').textContent = 'Đang mở camera, vui lòng chờ...';
@@ -416,14 +420,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadingOverlay.classList.add('d-none');
     }
 
-    /* -------------------------
-       Tạo nút chuyển đổi camera khi DOM ready
-    ------------------------- */
+    /* Tạo nút chuyển đổi camera khi DOM ready */
     createSwitchCameraButton();
 
-    /* -------------------------
-       Open camera - SỬ DỤNG HÀM MỚI
-    ------------------------- */
+    /* Open camera - SỬ DỤNG HÀM MỚI */
     btnOpen.addEventListener('click', async () => {
         showCameraLoading();
         
@@ -464,9 +464,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    /* -------------------------
-       Adaptive Live Detection 
-    ------------------------- */
+    /* Adaptive Live Detection */
     function startLiveDetection() {
         console.log('🚀 Bắt đầu live detection với interval:', DETECT_INTERVAL_MS);
         
@@ -585,9 +583,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, DETECT_INTERVAL_MS);
     }
 
-    /* -------------------------
-       Capture ảnh - CẬP NHẬT ẨN NÚT CHUYỂN CAMERA
-    ------------------------- */
+    /* Capture ảnh - CẬP NHẬT ẨN NÚT CHUYỂN CAMERA */
     btnShot.addEventListener('click', async () => {
         console.log('📸 Bắt đầu chụp ảnh...');
         
@@ -639,14 +635,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     });
 
-    /* -------------------------
-       Quay lại camera - HIỆN LẠI NÚT CHUYỂN CAMERA
-    ------------------------- */
+    /* Quay lại camera - HIỆN LẠI NÚT CHUYỂN CAMERA */
     btnBack.addEventListener('click', () => {
         console.log('🔄 Quay lại camera');
         
         snapshotContainer.classList.add('d-none');
         cameraContainer.classList.remove('d-none');
+        if (video.paused) {
+            video.play().catch(e => console.error("Lỗi khi đánh thức camera trên iOS:", e));
+        }
         studentsList.innerHTML = '';
         studentsCol.classList.add('d-none');
 
@@ -968,6 +965,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 // Cập nhật trực tiếp
                 attendanceTableBody.innerHTML = html;
+                attachAllEvents();
                 
                 console.log('✅ Đã cập nhật trực tiếp HTML vào table body');
                 console.log('🔍 Số lượng tr sau khi cập nhật:', attendanceTableBody.querySelectorAll('tr').length);
@@ -1052,6 +1050,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         row.querySelector('.col-dochinhxac').textContent = checked ? '100':'-';
                         row.querySelector('.col-thoigian').textContent = checked ? timeStr:'-';
                         row.querySelector('.col-hinhthuc').textContent = checked ? 'Thủ công' : '-';
+                        updateGhiChuState(row);
 
                         row.style.transition = 'background-color 0.4s';
                         row.style.backgroundColor = checked ? '#d1e7dd' : '#f8d7da';
@@ -1075,6 +1074,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     attachToggleEventListeners();
 
 });
+function attachAllEvents() {
+
+    // checkbox
+    document.querySelectorAll(".toggle-diemdanh").forEach(cb => {
+        cb.addEventListener("change", function () {
+            let row = this.closest("tr");
+            updateGhiChuState(row);
+        });
+    });
+
+    // select ghi chú
+    document.querySelectorAll(".ghi-chu-select").forEach(select => {
+        select.addEventListener("change", function () {
+            let id = this.dataset.id;
+            let value = this.value;
+
+            const url = "{{ route('diemdanh.ghichu', ':id') }}".replace(':id', id);
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                },
+                body: JSON.stringify({
+                    ghi_chu: value || null
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Saved", data);
+            })
+            .catch(err => {
+                console.error(err);
+            });
+        });
+    });
+
+    // chạy lại state
+    document.querySelectorAll("tbody tr").forEach(row => {
+        updateGhiChuState(row);
+    });
+}
 
 document.addEventListener('click', async function(e) {
     const btn = e.target.closest('.btn-xem-anh');
@@ -1126,6 +1168,67 @@ document.addEventListener('click', async function(e) {
     document.getElementById('modal-body-anh').innerHTML = html;
 });
 </script>
+<script>
+
+    function updateGhiChuState(row) {
+        let checkbox = row.querySelector(".toggle-diemdanh");
+        let hinhThuc = row.querySelector(".col-hinhthuc").innerText.trim().toLowerCase();
+        let select = row.querySelector(".ghi-chu-select");
+
+        if (checkbox.checked && hinhThuc === "thủ công") {
+            select.disabled = false;
+        } else {
+            if (select.value !== "") {
+                select.value = "";
+                select.dispatchEvent(new Event('change')); 
+            }
+            select.disabled = true;
+        }
+    }
+document.addEventListener("DOMContentLoaded", function () {
+
+    // chạy lần đầu khi load
+    document.querySelectorAll("tbody tr").forEach(row => {
+        updateGhiChuState(row);
+    });
+
+    // khi checkbox thay đổi
+    document.querySelectorAll(".toggle-diemdanh").forEach(cb => {
+        cb.addEventListener("change", function () {
+            let row = this.closest("tr");
+            updateGhiChuState(row);
+        });
+    });
+
+    // khi chọn ghi chú -> gọi AJAX
+    document.querySelectorAll(".ghi-chu-select").forEach(select => {
+        select.addEventListener("change", function () {
+            let id = this.dataset.id;
+            let value = this.value;
+            const url = "{{ route('diemdanh.ghichu', ':id') }}".replace(':id', id);
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                },
+                body: JSON.stringify({
+                    ghi_chu: value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Saved", data);
+            })
+            .catch(err => {
+                alert("Lỗi lưu ghi chú");
+                console.error(err);
+            });
+        });
+    });
+
+});
+</script>
 
 <div class="modal fade" id="modalAnh" tabindex="-1">
   <div class="modal-dialog modal-lg">
@@ -1140,4 +1243,47 @@ document.addEventListener('click', async function(e) {
     </div>
   </div>
 </div>
+<style>
+
+#scrollTopBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999;
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+#scrollTopBtn:hover {
+    background-color: #0b5ed7;
+}
+</style>
+<button id="scrollTopBtn" title="Lên đầu trang">
+    <i class="fa-solid fa-arrow-up"></i>
+</button>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const scrollBtn = document.getElementById("scrollTopBtn");
+    console.log(scrollBtn)
+    window.addEventListener("scroll", function () {
+        if (window.scrollY > 200) {
+            scrollBtn.style.display = "block";
+        } else {
+            scrollBtn.style.display = "none";
+        }
+    });
+    scrollBtn.addEventListener("click", function () {
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    });
+});
+</script>
 @endsection

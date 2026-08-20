@@ -93,7 +93,7 @@
                         <a href="{{ route('lichthi.phancong', $lt->id) }}" class="btn btn-info btn-sm">
                                     Phân công
                         </a>
-                        <div class="d-none d-md-block" style="position:absolute; right:40px; top:3px; text-align:right; font-size:12px; line-height:1.2;">
+                        <div class="d-none d-md-block" style="position:absolute; right:30px; top:3px; text-align:right; font-size:12px; line-height:1.2;">
                             <div>SL: {{ $lt->so_sinh_vien }} SV</div>
                             <div>GV đã PC: {{ $lt->so_giang_vien }} GV</div>
                         </div>
@@ -136,7 +136,7 @@
                         @endif
                         @if($lt->trang_thai === 'da_ket_thuc')
                             @if(Auth::user()->vai_tro === 'admin')
-                            <a href="{{ route('lichthi.ketqua', $lt->id) }}" class="btn btn-info btn-sm">
+                            <a href="{{ route('lichthi.ketqua', $lt->id) }}?{{ http_build_query(request()->query()) }}" class="btn btn-info btn-sm">
                                 📊 Xem kết quả
                             </a>
                             <a href="{{ route('lichthi.show', $lt->id) }}"

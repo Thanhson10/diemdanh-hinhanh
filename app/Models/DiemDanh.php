@@ -17,6 +17,7 @@ class DiemDanh extends Model
         'do_chinh_xac',
         'thoi_gian_dd',
         'hinh_thuc_dd',
+        'ghi_chu',
     ];
 
     public function sinhVien()
@@ -26,6 +27,15 @@ class DiemDanh extends Model
     public function lichThi()
 {
     return $this->belongsTo(LichThi::class);
+}
+public function getGhiChuTextAttribute()
+{
+    return match($this->ghi_chu) {
+        'chua_co_anh' => 'Chưa có ảnh',
+        'mat_khong_khop' => 'Không nhận diện được',
+        'anh_mo' => 'Ảnh mờ',
+        default => '-',
+    };
 }
 
 }

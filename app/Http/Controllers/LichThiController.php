@@ -23,7 +23,11 @@ class LichThiController extends Controller
                 'sinhViens as so_sinh_vien',
                 'giangViens as so_giang_vien'
             ]);
-
+        LichThi::whereIn('trang_thai', ['chua_dien_ra', 'dang_dien_ra'])
+            ->get()
+            ->each(function ($lichThi) {
+                $lichThi->capNhatTrangThai();
+            });
         // Bộ lọc nâng cao
         if ($request->filled('ten_mon')) {
             $query->whereHas('monHoc', function ($q) use ($request) {
@@ -70,10 +74,6 @@ class LichThiController extends Controller
         ->paginate(10)
         ->withQueryString();
 
-        foreach ($lichthis as $lichThi) {
-            $lichThi->capNhatTrangThai();
-        }
-
         return view('lichthi.index', compact('lichthis'),['hideSearch' => true]);
     }
 
@@ -96,6 +96,12 @@ class LichThiController extends Controller
             'mon_hoc_id' => 'required|exists:mon_hocs,id',
             'ngay_thi'   => 'required|date',
             'gio_thi'    => 'required',
+            // 'gio_thi' => [
+            //         'required',
+            //         'date_format:H:i',
+            //         'after_or_equal:07:00',
+            //         'before_or_equal:17:00',
+            //     ],
             'thoi_luong_thi' => 'required|integer|min:1|max:300',
             'phong'      => 'required|string',
             'ky_thi'     => 'required|string',
@@ -154,7 +160,6 @@ class LichThiController extends Controller
 
     public function update(Request $request, $id)
     {
-
         $lichthi = LichThi::findOrFail($id);
 
         if ($lichthi->trang_thai !== 'chua_dien_ra') {
@@ -168,23 +173,24 @@ class LichThiController extends Controller
             ($year - 1) . '-' . $year,
             $year . '-' . ($year + 1),
         ];
+        
         $request->validate([
-            'mon_hoc_id' => 'required|exists:mon_hocs,id',
-            'ngay_thi'   => 'required|date',
-            'gio_thi'    => 'required',
+            'mon_hoc_id'     => 'required|exists:mon_hocs,id',
+            'ngay_thi'       => 'required|date',
+            'gio_thi'        => 'required',
             'thoi_luong_thi' => 'required|integer|min:1|max:300',
-            'phong'      => 'required|string',
-            'ky_thi'     => 'required|string',
-            'nam_hoc'   => ['required', Rule::in($validNamHoc)],
+            'phong'          => 'required|string',
+            'ky_thi'         => 'required|string',
+            'nam_hoc'        => ['required', Rule::in($validNamHoc)],
         ]);
 
         $batDau = \Carbon\Carbon::parse($request->ngay_thi . ' ' . $request->gio_thi, 'Asia/Ho_Chi_Minh');
-        $ketThuc = $batDau->copy()->addMinutes($lichthi->thoi_luong_thi);
+        $ketThuc = $batDau->copy()->addMinutes((int) $request->thoi_luong_thi); 
 
         // 1. Check thời gian tương lai
         if ($batDau->lessThanOrEqualTo(now())) {
             return back()->withErrors([
-                'gio_thi' => 'Thời gian thi phải lớn hơn thời điểm hiện tại',
+                'gio_thi'  => 'Thời gian thi phải lớn hơn thời điểm hiện tại',
                 'ngay_thi' => 'Kiểm tra lại thời gian'
             ])->withInput();
         }
@@ -204,6 +210,53 @@ class LichThiController extends Controller
             ])->withInput();
         }
 
+        $giangVienIds = PhanCongGV::where('lich_thi_id', $lichthi->id)->pluck('giang_vien_id');
+        
+        if ($giangVienIds->isNotEmpty()) {
+            $lichTrungGV = PhanCongGV::whereIn('giang_vien_id', $giangVienIds)
+                ->whereHas('lichThi', function($q) use ($batDau, $ketThuc, $lichthi) {
+                    $q->where('id', '<>', $lichthi->id) // Bỏ qua lịch hiện tại đang sửa
+                    ->where(function($q2) use ($batDau, $ketThuc) {
+                        $q2->whereRaw("TIMESTAMP(ngay_thi, gio_thi) < ?", [$ketThuc])
+                        ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL thoi_luong_thi MINUTE) > ?", [$batDau]);
+                    });
+                })
+                ->with(['lichThi.monHoc', 'giangVien'])
+                ->first();
+
+            if ($lichTrungGV) {
+                $lt = $lichTrungGV->lichThi;
+                $gv = $lichTrungGV->giangVien;
+                return back()->withErrors([
+                    'ngay_thi' => "Không thể đổi giờ! Giảng viên {$gv->ho_ten} bị trùng với ca thi môn {$lt->monHoc->ten_mon} (Phòng {$lt->phong}, lúc {$lt->thoi_gian_thi->format('d-m-Y H:i')})."
+                ])->withInput();
+            }
+        }
+
+        $sinhVienIds = DiemDanh::where('lich_thi_id', $lichthi->id)->pluck('sinh_vien_id');
+
+        if ($sinhVienIds->isNotEmpty()) {
+            $trungLichSV = DiemDanh::whereIn('sinh_vien_id', $sinhVienIds)
+                ->whereHas('lichThi', function($q) use ($batDau, $ketThuc, $lichthi) {
+                    $q->where('id', '<>', $lichthi->id)
+                    ->where(function($q2) use ($batDau, $ketThuc) {
+                        $q2->whereRaw("TIMESTAMP(ngay_thi, gio_thi) < ?", [$ketThuc])
+                        ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL thoi_luong_thi MINUTE) > ?", [$batDau]);
+                    });
+                })
+                ->with(['lichThi.monHoc', 'sinhVien'])
+                ->first(); 
+
+            if ($trungLichSV) {
+                $lt = $trungLichSV->lichThi;
+                $sv = $trungLichSV->sinhVien;
+                return back()->withErrors([
+                    'ngay_thi' => "Không thể đổi giờ! Sinh viên {$sv->ma_sv} - {$sv->ho_ten} bị trùng với ca thi môn {$lt->monHoc->ten_mon} (Phòng {$lt->phong}, lúc {$lt->thoi_gian_thi->format('d-m-Y H:i')})."
+                ])->withInput();
+            }
+        }
+
+        // Nếu vượt qua toàn bộ các bước check -> Tiến hành cập nhật
         $lichthi->update($request->all());
 
         return redirect()->route('lichthi.index')
@@ -257,9 +310,7 @@ class LichThiController extends Controller
         $request->validate([
             'file' => 'required|mimes:xlsx,xls'
         ]);
-
         Excel::import(new LichThiImport, $request->file('file'));
-
         return redirect()->route('lichthi.index')->with('success', 'Import lịch thi thành công!');
     }
     public function phanCongForm($id) { 
@@ -323,10 +374,17 @@ class LichThiController extends Controller
 
 
     public function xoaPhanCong($lichthiId, $phancongId) { 
+
+        $lichthi = LichThi::findOrFail($lichthiId);
+
+        if (in_array($lichthi->trang_thai, ['dang_dien_ra', 'da_ket_thuc'])) {
+            return redirect()->back()->with('error', 'Không thể hủy phân công khi lịch thi đang diễn ra hoặc đã kết thúc!');
+        }
+
         $phanCong = PhanCongGV::where('lich_thi_id', $lichthiId) 
         ->where('id', $phancongId) 
-        ->firstOrFail(); $phanCong
-        ->delete(); 
+        ->firstOrFail(); 
+        $phanCong->delete(); 
         return redirect()->back()->with('success', 'Đã hủy phân công giảng viên.'); 
     }
 

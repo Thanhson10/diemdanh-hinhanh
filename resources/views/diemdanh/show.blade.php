@@ -9,13 +9,16 @@
     </h2>
 
     <div class="action-buttons mb-2">
-        <a href="{{ route('diemdanh.index') }}" class="btn btn-custom btn-secondary">
+        <a href="{{ route('diemdanh.index', request()->query()) }}" class="btn btn-custom btn-secondary">
             <i class="fa-solid fa-list"></i> Danh sách phòng thi
         </a>
 
-        <a href="{{ route('rekognition.index', [$lichThi->id]) }}" class="btn btn-custom btn-primary">
+        <button 
+            onclick="location.href='{{ route('rekognition.index', [$lichThi->id]) }}'"
+            class="btn btn-custom btn-primary"
+            {{ $lichThi->trang_thai != 'dang_dien_ra' ? 'disabled' : '' }}>
             <i class="fa-solid fa-video"></i> Điểm danh
-        </a>
+        </button>
     </div>
     {{-- Thanh tìm kiếm --}}
     <form method="GET" action="{{ route('diemdanh.show', $lichThi->id) }}" class="mb-2 d-flex align-items-center gap-2 flex-wrap">
@@ -53,6 +56,7 @@
                         <th>Độ chính xác</th>
                         <th>Thời gian</th>
                         <th>Hình thức</th>
+                        <th>Ghi chú</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -70,13 +74,37 @@
                             <td >{{ $item->sinhVien->lop }}</td>
                             <td>
                                 <input type="checkbox" class="form-check-input toggle-diemdanh"
-                                    data-id="{{ $item->id }}" {{ $item->ket_qua === 'hợp lệ' ? 'checked' : '' }}
-                                    @if($lichThi->trang_thai === 'da_ket_thuc') disabled @endif
+                                    data-id="{{ $item->id }}"
+                                    {{ $item->ket_qua === 'hợp lệ' ? 'checked' : '' }}
+                                    @if($lichThi->trang_thai !== 'dang_dien_ra') disabled @endif>
                             </td>
                             <td class="col-ketqua">{{ $item->ket_qua ?? 'Chưa có' }}</td>
                             <td class="col-dochinhxac">{{ $item->do_chinh_xac ?? '-' }}</td>
                             <td class="col-thoigian">{{ $item->thoi_gian_dd ?? '-' }}</td>
                             <td class="col-hinhthuc">{{ $item->hinh_thuc_dd ?? '-' }}</td>
+                            <td>
+                                <select class="form-select form-select-sm ghi-chu-select" 
+                                    data-id="{{ $item->id }}" disabled>
+
+                                    <option value="">-- Chọn --</option>
+
+                                    <option value="chua_co_anh"
+                                        {{ $item->ghi_chu == 'chua_co_anh' ? 'selected' : '' }}>
+                                        Chưa có ảnh
+                                    </option>
+
+                                    <option value="mat_khong_khop"
+                                        {{ $item->ghi_chu == 'mat_khong_khop' ? 'selected' : '' }}>
+                                        Không nhận diện được
+                                    </option>
+
+                                    <!-- <option value="anh_mo"
+                                        {{ $item->ghi_chu == 'anh_mo' ? 'selected' : '' }}>
+                                        Ảnh mờ
+                                    </option> -->
+
+                                </select>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -143,6 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     row.querySelector('.col-dochinhxac').textContent = checked ? '100':'-';
                     row.querySelector('.col-thoigian').textContent = checked ? timeStr:'-';
                     row.querySelector('.col-hinhthuc').textContent = checked ? 'Thủ công' : '-';
+                    updateGhiChuState(row);
 
                     row.style.transition = 'background-color 0.4s';
                     row.style.backgroundColor = checked ? '#d1e7dd' : '#f8d7da';
@@ -201,6 +230,69 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 </script>
+<script>
+
+    function updateGhiChuState(row, clearWhenDisabled = false) {
+        let checkbox = row.querySelector(".toggle-diemdanh");
+        let hinhThuc = row.querySelector(".col-hinhthuc").innerText.trim().toLowerCase();
+        let select = row.querySelector(".ghi-chu-select");
+        let lichDangDienRa = @json($lichThi->trang_thai === 'dang_dien_ra');
+
+        if (lichDangDienRa && checkbox.checked && hinhThuc.includes("thủ công")) {
+            select.disabled = false;
+        } else {
+            
+            select.disabled = true;
+            if (clearWhenDisabled && select.value !== "") {
+                select.value = "";
+                select.dispatchEvent(new Event("change"));
+            }
+        }
+    }
+document.addEventListener("DOMContentLoaded", function () {
+
+    // chạy lần đầu khi load
+    document.querySelectorAll("tbody tr").forEach(row => {
+        updateGhiChuState(row);
+    });
+
+    // khi checkbox thay đổi
+    document.querySelectorAll(".toggle-diemdanh").forEach(cb => {
+        cb.addEventListener("change", function () {
+            let row = this.closest("tr");
+            updateGhiChuState(row, !this.checked);
+        });
+    });
+
+    // khi chọn ghi chú -> gọi AJAX
+    document.querySelectorAll(".ghi-chu-select").forEach(select => {
+        select.addEventListener("change", function () {
+            let id = this.dataset.id;
+            let value = this.value;
+            const url = "{{ route('diemdanh.ghichu', ':id') }}".replace(':id', id);
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                },
+                body: JSON.stringify({
+                    ghi_chu: value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Saved", data);
+            })
+            .catch(err => {
+                alert("Lỗi lưu ghi chú");
+                console.error(err);
+            });
+        });
+    });
+
+});
+</script>
 <div class="modal fade" id="modalAnh" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -214,4 +306,64 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 </div>
+
+<style>
+#scrollTopBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999;
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#scrollTopBtn:hover {
+    background-color: #0b5ed7;
+}
+.action-buttons {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+
+    display: inline-block;  
+    background: transparent; 
+    padding: 0;
+}
+</style>
+<button id="scrollTopBtn" title="Lên đầu trang">
+    <i class="fa-solid fa-arrow-up"></i>
+</button>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const scrollBtn = document.getElementById("scrollTopBtn");
+    
+    // class="content" từ layout
+    const scrollContainer = document.querySelector(".content"); 
+
+    if (scrollContainer) {
+        scrollContainer.addEventListener("scroll", function () {
+            
+            if (scrollContainer.scrollTop > 200) {
+                scrollBtn.style.display = "block";
+            } else {
+                scrollBtn.style.display = "none";
+            }
+        });
+
+        scrollBtn.addEventListener("click", function () {
+            scrollContainer.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        });
+    }
+});
+</script>
 @endsection

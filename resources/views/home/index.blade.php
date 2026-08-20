@@ -9,7 +9,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
-    <h2 style="margin-bottom: 16px;">📚 Danh sách phòng thi</h2>
+    <h2 style="margin-bottom: 16px;">📚 Phòng thi đang diễn ra</h2>
     
     <div class="grid-container">
         @foreach($lichThis as $lich)

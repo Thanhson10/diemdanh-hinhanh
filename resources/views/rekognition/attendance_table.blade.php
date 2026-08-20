@@ -27,6 +27,29 @@
             <td class="col-dochinhxac">{{ $item->do_chinh_xac ?? '-' }}</td>
             <td class="col-thoigian">{{ $item->thoi_gian_dd ?? '-' }}</td>
             <td class="col-hinhthuc">{{ $item->hinh_thuc_dd ?? '-' }}</td>
+            <td>
+                <select class="form-select form-select-sm ghi-chu-select"   
+                    data-id="{{ $item->id }}" disabled>
+
+                    <option value="">-- Chọn --</option>
+
+                    <option value="chua_co_anh"
+                        {{ $item->ghi_chu == 'chua_co_anh' ? 'selected' : '' }}>
+                            Chưa có ảnh
+                    </option>
+
+                    <option value="mat_khong_khop"
+                        {{ $item->ghi_chu == 'mat_khong_khop' ? 'selected' : '' }}>
+                            Không nhận diện được
+                    </option>
+
+                    <!-- <option value="anh_mo"
+                        {{ $item->ghi_chu == 'anh_mo' ? 'selected' : '' }}>
+                            Ảnh mờ
+                    </option> -->
+
+                </select>
+            </td>
         </tr>
     @endforeach
 @endif

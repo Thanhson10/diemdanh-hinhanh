@@ -46,17 +46,7 @@ Route::middleware(['auth:giangvien','checkactive'])->group(function () {
     
     Route::resource('giangvien', GiangVienController::class);
     
-    Route::get('/sinhvien/{id}/images', function ($id) {
-        $sv = SinhVien::findOrFail($id);
-
-        return $sv->danhSachAnhTrain->map(function ($img) {
-            return [
-                'id' => $img->id,
-                'url' => asset($img->hinh_anh_url),
-                'trang_thai' => $img->trang_thai
-            ];
-        });
-    });
+    Route::get('/sinhvien/{id}/images', [SinhVienController::class, 'anhDaTrain'])->name('sinhvien.anhDaTrain');
 
     //Trang upload khuôn mặt sinh viên
     Route::get('/rekognition/upload', [RekognitionController::class, 'uploadForm'])->name('rekognition.uploadForm');
@@ -103,8 +93,7 @@ Route::middleware(['auth:giangvien','checkactive'])->group(function () {
     Route::get('/rekognition/diemdanh/{lichThi}', [RekognitionController::class, 'index'])->name('rekognition.index');
 
     Route::post('/diemdanh/toggle', [App\Http\Controllers\DiemDanhController::class, 'toggle'])->name('diemdanh.toggle');
-
-    Route::post('/diemdanh/{lichThi}/ketthuc', [DiemDanhController::class, 'ketThucCaThi'])->name('diemdanh.ketthuc');
+    Route::post('/diem-danh/update-ghi-chu/{id}', [DiemDanhController::class, 'updateGhiChu'])->name('diemdanh.ghichu');
 
     Route::post('/sinhvien/search-list', [SinhVienController::class, 'searchByList'])->name('sinhvien.searchByList');
 

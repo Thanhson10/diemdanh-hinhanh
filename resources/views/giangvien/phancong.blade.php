@@ -186,7 +186,7 @@ document.querySelectorAll('.btn-unassign').forEach(btn => {
             Swal.fire('Thành công', data.message, 'success')
                 .then(()=> location.reload());
         } else {
-            Swal.fire('Lỗi', 'Không thể hủy phân công', 'error');
+            Swal.fire('Lỗi', data.message, 'error');
         }
     });
 });

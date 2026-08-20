@@ -10,7 +10,7 @@
             <a href="{{ route('lichthi.export', $lichThi->id) }}" class="btn btn-success btn-sm">
                 ⬇️ Xuất danh sách Excel
             </a>
-            <a href="{{ route('lichthi.index') }}" class="btn btn-secondary btn-sm">
+            <a href="{{ route('lichthi.index', request()->query()) }}" class="btn btn-secondary btn-sm">
                 ← Trở về danh sách phòng thi
             </a>
         </div>
@@ -48,6 +48,7 @@
                         <th>Độ chính xác</th>
                         <th>Thời gian điểm danh</th>
                         <th>Hình thức</th>
+                        <th>Ghi chú</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -67,6 +68,7 @@
                         <td>{{ $diemDanh->do_chinh_xac ?? '-' }}</td>
                         <td>{{ $diemDanh->thoi_gian_dd ?? '-' }}</td>
                         <td>{{ $diemDanh->hinh_thuc_dd ?? '-' }}</td>
+                        <td>{{ $diemDanh->ghi_chu_text}}</td>
                     </tr>
                     @endforeach
                 </tbody>

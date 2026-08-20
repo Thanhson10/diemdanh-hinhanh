@@ -35,7 +35,7 @@
 
         <div class="mb-3">
             <label>Giờ thi</label>
-            <input type="time" name="gio_thi" min="00:00" max="23:59" class="form-control" 
+            <input type="time" name="gio_thi" min="07:00" max="18:00" class="form-control" 
                 value="{{ old('gio_thi') }}" required>
             @error('gio_thi')
                 <div class="text-danger mt-1">{{ $message }}</div>

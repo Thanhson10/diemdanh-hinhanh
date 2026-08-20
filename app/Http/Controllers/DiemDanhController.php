@@ -17,6 +17,11 @@ class DiemDanhController extends Controller
     {   
         $user = Auth::user();
         $query = LichThi::with('monHoc');
+        LichThi::whereIn('trang_thai', ['chua_dien_ra', 'dang_dien_ra'])
+            ->get()
+            ->each(function ($lichThi) {
+                $lichThi->capNhatTrangThai();
+            });
 
         // Nếu đã đăng nhập và là admin hoặc giang viên -> chỉ xem lịch thi được phân công
         if ($user && in_array($user->vai_tro, ['giang_vien', 'admin'])) {
@@ -51,9 +56,7 @@ class DiemDanhController extends Controller
         $lichThis = $query->orderByRaw("
             FIELD(trang_thai, 'dang_dien_ra', 'chua_dien_ra', 'da_ket_thuc')")
             ->orderBy('ngay_thi', 'desc')->orderBy('gio_thi', 'desc')->paginate(10)->withQueryString();;
-        foreach ($lichThis as $lichThi) {
-            $lichThi->capNhatTrangThai();
-        }
+    
         return view('diemdanh.index', compact('lichThis'),['hideSearch' => true])
             ->with('search', $request->search);
     }
@@ -132,7 +135,7 @@ class DiemDanhController extends Controller
                     'thoi_gian_dd' => now(),
                     'hinh_thuc_dd' => 'Thủ công',
                 ]);
-                return response()->json(['success' => true, 'message' => 'Điểm danh thành công']);
+                return response()->json(['success' => true, 'message' => 'Điểm danh thành công, lưu ý để lại ghi chú!']);
             } else {
                 $diemDanh->update([
                     'ket_qua' => null,
@@ -159,5 +162,33 @@ class DiemDanhController extends Controller
                 ];
             })
         );
+    }
+    public function updateGhiChu(Request $request, $id)
+    {
+        $diemDanh = DiemDanh::findOrFail($id);
+
+        if ($request->ghi_chu === null || $request->ghi_chu === '') {
+            $diemDanh->ghi_chu = null;
+            $diemDanh->save();
+
+            return response()->json([
+                'success' => true
+            ]);
+        }
+
+        // chỉ cho lưu nếu hợp lệ
+        if ($diemDanh->hinh_thuc_dd !== 'Thủ công' || $diemDanh->ket_qua !== 'hợp lệ') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không hợp lệ'
+            ], 400);
+        }
+
+        $diemDanh->ghi_chu = $request->ghi_chu;
+        $diemDanh->save();
+
+        return response()->json([
+            'success' => true
+        ]);
     }
 }

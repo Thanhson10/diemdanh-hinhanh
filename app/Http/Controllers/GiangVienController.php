@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\GiangVien;
 use App\Models\LichThi;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash; // để mã hóa mật khẩu
+use Illuminate\Support\Facades\Hash;
 use App\Imports\GiangVienImport;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
@@ -144,21 +144,16 @@ class GiangVienController extends Controller
                 $q->where('ten_mon', 'like', '%'.$request->ten_mon.'%')
             );
         }
-
         if($request->phong){
             $query->where('phong', 'like', '%'.$request->phong.'%');
         }
-
         if($request->ngay){
             $query->where('ngay_thi', $request->ngay);
         }
-
         if($request->gio){
             $query->where('gio_thi', $request->gio);
         }
-
         $lichthis = $query->get();
-
         // Load danh sách lịch đã phân công (chỉ lấy lịch chưa diễn ra)
         $giangvien->load(['lichthis' => function($q){
             $q->where('trang_thai', 'chua_dien_ra')->with('monHoc');
@@ -202,6 +197,12 @@ class GiangVienController extends Controller
     }
     public function unassign(GiangVien $giangvien, LichThi $lichthi)
     {
+        if (in_array($lichthi->trang_thai, ['dang_dien_ra', 'da_ket_thuc'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không thể hủy phân công khi lịch thi đang diễn ra hoặc đã kết thúc!'
+            ], 400); 
+        }
         // Xóa bản ghi trong bảng trung gian
         $giangvien->lichthis()->detach($lichthi->id);
 

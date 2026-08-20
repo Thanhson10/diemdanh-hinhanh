@@ -17,11 +17,10 @@ class RekognitionController extends Controller
     private $bucket = 'diemdanh-sinhvien';
     private $collection = 'sinhvien_faces';
 
-    // =============================
     // VIEW
-    // =============================
     public function uploadForm()
     {
+        AnhTrainSv::cleanupFailedSafe();
         return view('rekognition.train', ['hideSearch' => true]);
     }
 
@@ -52,88 +51,137 @@ class RekognitionController extends Controller
         return view('rekognition.index', compact('lichThi', 'sinhViens'));
     }
 
-    // =============================
     // TRAIN (CALL LAMBDA)
-    // =============================
     public function trainAjax(Request $request)
 {
     return $this->handleTrain($request);
 }
 
 private function handleTrain(Request $request)
-    {
-            if (!defined('CURL_SSLVERSION_TLSv1_2')) {
-            define('CURL_SSLVERSION_TLSv1_2', 6);
-        }
-        try {
-            $request->validate([
-                'ma_sv' => 'required',
-                'hinh_anh' => 'required|mimes:jpg,jpeg,png|max:2048',
-            ]);
-
-            $ma_sv = strtoupper(trim($request->ma_sv));
-            $image = $request->file('hinh_anh');
-
-            $sv = SinhVien::where('ma_sv', $ma_sv)->first();
-
-            if (!$sv) {
-                return $this->error("Không tồn tại MSSV: $ma_sv");
-            }
-
-            // 1. Kiểm tra
-            $currentCount = $sv->danhSachAnhTrain()->where('trang_thai', 'trained')->count();
-            $maxLimit = 2; 
-
-            if ($currentCount >= $maxLimit) {
-                return $this->error("Sinh viên đã đạt giới hạn $maxLimit ảnh. Vui lòng xóa bớt ảnh cũ.");
-            }
-
-            // 2. Upload vào temp
-            $tempPath = "temp/{$ma_sv}_" . uniqid() . ".jpg";
-            Storage::disk('s3')->put($tempPath, file_get_contents($image), 'public');
-
-            // 3. Gọi Lambda
-            $lambdaUrl = env('LAMBDA_TRAIN_URL');
-            $response = Http::post($lambdaUrl, [
-                'bucket' => $this->bucket,
-                'imageKey' => $tempPath, 
-                'collectionId' => $this->collection,
-                'externalImageId' => $ma_sv,
-            ]);
-            // \Log::info($response->status());
-            // \Log::info($response->body());
-
-            if (!$response->ok()) {
-                return $this->error('Không gọi được Lambda');
-            }
-
-            $data = $this->parseLambdaResponse($response);
-            if (!$data['success']) {
-                return $this->error($data['message'] ?? 'Train thất bại');
-            }
-
-            $faceIds = $data['face_ids'] ?? [];
-            $faceId = count($faceIds) > 0 ? $faceIds[0] : null;
-
-            $finalPath = $data['image_key'];
-
-            $anhTrain = AnhTrainSv::create([
-                'sinh_vien_id' => $sv->id,
-                'hinh_anh'     => $finalPath, 
-                'face_id'      => $data['face_ids'] ?? [],
-                'trang_thai'   => 'trained',
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Tải ảnh và train thành công',
-                'image_url' => Storage::disk('s3')->url($finalPath)
-            ]);
-
-        } catch (\Throwable $e) {
-            return $this->error($e->getMessage(), 500);
-        }
+{
+    if (!defined('CURL_SSLVERSION_TLSv1_2')) {
+        define('CURL_SSLVERSION_TLSv1_2', 6);
     }
+
+    try {
+        $request->validate([
+            'ma_sv' => 'required',
+            'hinh_anh' => 'required|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        $ma_sv = strtoupper(trim($request->ma_sv));
+        $image = $request->file('hinh_anh');
+
+        $sv = SinhVien::where('ma_sv', $ma_sv)->first();
+
+        if (!$sv) {
+            return $this->error("Không tồn tại MSSV: $ma_sv");
+        }
+
+        // Tạo hash
+        $fileContent = file_get_contents($image);
+        $fileHash = md5($fileContent);
+        $fileName = $image->getClientOriginalName();
+
+        // Check trùng
+        $exists = AnhTrainSv::where('sinh_vien_id', $sv->id)
+            ->where('file_hash', $fileHash)
+            ->where('trang_thai', 'trained')
+            ->exists();
+
+        if ($exists) {
+            return $this->error("Ảnh này đã được upload trước đó");
+        }
+
+        // Check limit
+        $currentCount = $sv->danhSachAnhTrain()
+            ->where('trang_thai', 'trained')
+            ->count();
+
+        $maxLimit = 2;
+
+        if ($currentCount >= $maxLimit) {
+            return $this->error("Sinh viên đã đạt giới hạn $maxLimit ảnh");
+        }
+
+        // Tạo record
+        $anhTrain = AnhTrainSv::create([
+            'sinh_vien_id' => $sv->id,
+            'file_hash'    => $fileHash,
+            'file_name'    => $fileName,
+            'trang_thai'   => 'pending',
+        ]);
+
+        // Upload S3
+        $tempPath = "temp/{$ma_sv}_" . uniqid() . ".jpg";
+        Storage::disk('s3')->put($tempPath, $fileContent, 'public');
+
+        // GỌI LAMBDA
+        $lambdaUrl = env('LAMBDA_TRAIN_URL');
+
+        $response = Http::post($lambdaUrl, [
+            'bucket' => $this->bucket,
+            'imageKey' => $tempPath,
+            'collectionId' => $this->collection,
+            'externalImageId' => $ma_sv,
+        ]);
+
+        if (!$response->ok()) {
+            $anhTrain->update(['trang_thai' => 'failed']);
+            return $this->error('Không gọi được Lambda');
+        }
+
+        $data = $this->parseLambdaResponse($response);
+
+        if (!$data['success']) {
+            $anhTrain->update(['trang_thai' => 'failed']);
+            return $this->error($data['message'] ?? 'Train thất bại');
+        }
+
+        // SUCCESS
+        $faceIds = $data['face_ids'] ?? [];
+        $faceId = count($faceIds) > 0 ? $faceIds[0] : null;
+
+        $finalPath = $data['image_key'];
+
+        $anhTrain->update([
+            'hinh_anh'   => $finalPath,
+            'face_id'    => $faceIds,
+            'trang_thai' => 'trained',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tải ảnh và train thành công',
+            'image_url' => Storage::disk('s3')->url($finalPath)
+        ]);
+
+    } catch (\Throwable $e) {
+
+        //  nếu có record thì update failed
+        if (isset($anhTrain)) {
+            $anhTrain->update(['trang_thai' => 'failed']);
+        }
+
+        $raw = $e->getMessage();
+
+        // map lỗi
+        if (str_contains($raw, 'cURL error 6')) {
+            $msg = 'Không thể kết nối tới server';
+        } elseif (str_contains($raw, 'cURL error 28')) {
+            $msg = 'Server phản hồi chậm, vui lòng thử lại';
+        } else {
+            $msg = 'Có lỗi xảy ra, vui lòng thử lại';
+        }
+
+        \Log::error($raw);
+
+        return response()->json([
+            'success' => false,
+            'message' => $msg
+        ], 500);
+    }
+}
 
     // COMPARE (CALL LAMBDA)
     public function compareMany(Request $request, LichThi $lichThi)

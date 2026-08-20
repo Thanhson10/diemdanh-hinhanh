@@ -14,6 +14,7 @@ class MauSinhVienExport implements FromArray, WithEvents
             ['Danh sách sinh viên lớp D'],
             ['MSSV', 'Họ', 'Tên', 'Lớp'],
             ['DH52200314', 'Trần', 'Huy An', 'D22_TH15'],
+            ['DH52200315', 'Nguyễn', 'An Huy', 'D22_TH15'],
         ];
     }
 
