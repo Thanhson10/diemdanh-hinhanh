@@ -1,175 +1,149 @@
 @extends('layouts.main-layout') 
 
+@section('title', 'Quản lý Danh mục Môn học')
+
 @section('content')
-<div class="container mt-4">
+<div class="container-fluid px-0">
+    {{-- Alerts --}}
     @if(session('error'))
-        <div class="alert alert-danger">
-            {{ session('error') }}
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <i class="fa-solid fa-circle-exclamation fs-5"></i>
+            <div>{{ session('error') }}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
     @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            <i class="fa-solid fa-circle-check fs-5"></i>
+            <div>{{ session('success') }}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3>📚 Danh sách môn học</h3>
-        <a href="{{ route('monhoc.create') }}" class="btn btn-primary">
-            ➕ Thêm môn học
-        </a>
-    </div>
-    {{-- Thanh tìm kiếm --}}
-    <form method="GET" action="{{ route('monhoc.index') }}" class="mb-3">
-        <div class="input-group">
-            <input type="text" name="search" value="{{ request('search') }}"
-                   class="form-control" placeholder="🔍 Tìm theo mã môn hoặc tên môn...">
-            <button class="btn btn-primary" type="submit">Tìm kiếm</button>
-            @if(request('search'))
-                <a href="{{ route('monhoc.index') }}" class="btn btn-outline-secondary">Xóa lọc</a>
-            @endif
-        </div>
-    </form>
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
 
-            <table class="table table-bordered table-hover mb-0">
-                <thead class="table-light">
-                    <tr class="text-center">
-                        <th>Mã môn</th>
-                        <th>Tên môn</th>
-                        <th>Hành động</th>
+    {{-- Top Action Bar --}}
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1" style="color: var(--edu-text); font-size: 20px;">
+                <i class="fa-solid fa-book-open text-primary me-2"></i>Danh Mục Môn Học
+            </h3>
+            <p class="text-muted small mb-0">Quản lý các học phần, mã môn phục vụ lập lịch và tổ chức thi</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('monhoc.create') }}" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-plus"></i>
+                <span>Thêm Môn Học</span>
+            </a>
+        </div>
+    </div>
+
+    {{-- Filter & Search Card --}}
+    <div class="filter-card">
+        <form method="GET" action="{{ route('monhoc.index') }}" class="row g-2 align-items-center">
+            <div class="col-12 col-md-8 col-lg-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" name="search" value="{{ request('search') }}"
+                           class="form-control border-start-0 ps-0" placeholder="Tìm theo mã môn hoặc tên môn học...">
+                    @if(request('search'))
+                        <a href="{{ route('monhoc.index') }}" class="btn btn-outline-secondary">
+                            <i class="fa-solid fa-xmark"></i>
+                        </a>
+                    @endif
+                    <button class="btn btn-primary" type="submit">Tìm kiếm</button>
+                </div>
+            </div>
+            <div class="col-12 col-md-4 text-md-end text-muted small">
+                Tổng cộng: <strong class="text-primary">{{ $monHocs->total() ?? count($monHocs) }}</strong> môn học
+            </div>
+        </form>
+    </div>
+
+    {{-- Table Container --}}
+    <div class="table-container shadow-sm">
+        <div class="table-responsive">
+            <table class="table-edu">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width: 80px;">STT</th>
+                        <th style="width: 180px;">Mã Môn</th>
+                        <th>Tên Môn Học</th>
+                        <th class="text-center" style="width: 160px;">Thao Tác</th>
                     </tr>
                 </thead>
-
                 <tbody>
-                    @forelse($monHocs as $mon)
-                        <tr class="text-center">
-                            <td>{{ $mon->ma_mon }}</td>
-                            <td class="text-start">{{ $mon->ten_mon }}</td>
+                    @forelse($monHocs as $index => $mon)
+                        <tr>
+                            <td class="text-center text-muted fw-semibold">
+                                {{ method_exists($monHocs, 'firstItem') ? $monHocs->firstItem() + $index : $index + 1 }}
+                            </td>
                             <td>
-                                <a href="{{ route('monhoc.edit', $mon->id) }}" class="btn btn-sm btn-warning">
-                                    ✏️ Sửa
-                                </a>
+                                <span class="edu-badge edu-badge-primary">
+                                    <i class="fa-solid fa-hashtag me-1 opacity-75"></i>{{ $mon->ma_mon }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-dark">{{ $mon->ten_mon }}</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-inline-flex gap-2">
+                                    <a href="{{ route('monhoc.edit', $mon->id) }}" class="btn-action-soft btn-action-soft-warning" title="Chỉnh sửa">
+                                        <i class="fa-solid fa-pen-to-square"></i> Sửa
+                                    </a>
 
-                                <form action="{{ route('monhoc.destroy', $mon->id) }}"
-                                    method="POST"
-                                    style="display:inline-block;"
-                                    onsubmit="return confirmDelete();">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="btn btn-sm btn-danger">
-                                        🗑️ Xóa
-                                    </button>
-                                </form>
+                                    <form action="{{ route('monhoc.destroy', $mon->id) }}" method="POST" class="d-inline m-0" onsubmit="return confirmDelete('{{ $mon->ten_mon }}');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn-action-soft btn-action-soft-danger" title="Xóa môn">
+                                            <i class="fa-solid fa-trash-can"></i> Xóa
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="text-center p-3">
-                                Chưa có môn học nào.
+                            <td colspan="4" class="p-5 text-center">
+                                <div class="empty-state-card border-0 py-2">
+                                    <i class="fa-solid fa-book-bookmark mb-2"></i>
+                                    <h4>Chưa có dữ liệu môn học</h4>
+                                    <p class="text-muted mb-3">
+                                        @if(request('search'))
+                                            Không tìm thấy môn học nào khớp với từ khóa "{{ request('search') }}".
+                                        @else
+                                            Hệ thống hiện tại chưa có môn học nào trong danh mục.
+                                        @endif
+                                    </p>
+                                    <a href="{{ route('monhoc.create') }}" class="btn btn-primary btn-sm">
+                                        <i class="fa-solid fa-plus me-1"></i> Thêm môn học đầu tiên
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
-
             </table>
-            {{-- Hiển thị phân trang --}}
-            @if($monHocs->hasPages())
-            <div class="d-flex justify-content-center mt-4">
-                <nav aria-label="Page navigation">
-                    <ul class="pagination pagination-sm mb-0">
-                        {{-- Previous Page Link --}}
-                        @if($monHocs->onFirstPage())
-                            <li class="page-item disabled">
-                                <span class="page-link">
-                                    <i class="fas fa-chevron-left"></i>
-                                </span>
-                            </li>
-                        @else
-                            <li class="page-item">
-                                <a class="page-link" href="{{ $monHocs->previousPageUrl() }}" aria-label="Previous">
-                                    <i class="fas fa-chevron-left"></i>
-                                </a>
-                            </li>
-                        @endif
-
-                        {{-- Pagination Elements --}}
-                        @php
-                            $current = $monHocs->currentPage();
-                            $last = $monHocs->lastPage();
-                            $start = max(1, $current - 2);
-                            $end = min($last, $current + 2);
-                        @endphp
-
-                        {{-- First Page Link --}}
-                        @if($start > 1)
-                            <li class="page-item">
-                                <a class="page-link" href="{{ $monHocs->url(1) }}">1</a>
-                            </li>
-                            @if($start > 2)
-                                <li class="page-item disabled">
-                                    <span class="page-link">...</span>
-                                </li>
-                            @endif
-                        @endif
-
-                        {{-- Page Number Links --}}
-                        @for($i = $start; $i <= $end; $i++)
-                            @if($i == $current)
-                                <li class="page-item active">
-                                    <span class="page-link">{{ $i }}</span>
-                                </li>
-                            @else
-                                <li class="page-item">
-                                    <a class="page-link" href="{{ $monHocs->url($i) }}">{{ $i }}</a>
-                                </li>
-                            @endif
-                        @endfor
-
-                        {{-- Last Page Link --}}
-                        @if($end < $last)
-                            @if($end < $last - 1)
-                                <li class="page-item disabled">
-                                    <span class="page-link">...</span>
-                                </li>
-                            @endif
-                            <li class="page-item">
-                                <a class="page-link" href="{{ $monHocs->url($last) }}">{{ $last }}</a>
-                            </li>
-                        @endif
-
-                        {{-- Next Page Link --}}
-                        @if($monHocs->hasMorePages())
-                            <li class="page-item">
-                                <a class="page-link" href="{{ $monHocs->nextPageUrl() }}" aria-label="Next">
-                                    <i class="fas fa-chevron-right"></i>
-                                </a>
-                            </li>
-                        @else
-                            <li class="page-item disabled">
-                                <span class="page-link">
-                                    <i class="fas fa-chevron-right"></i>
-                                </span>
-                            </li>
-                        @endif
-                    </ul>
-                </nav>
-            </div>
-
-            {{-- Hiển thị thông tin kết quả --}}
-            <div class="text-center text-muted mt-2 small">
-                Hiển thị {{ ($monHocs->currentPage() - 1) * $monHocs->perPage() + 1 }} 
-                đến {{ min($monHocs->currentPage() * $monHocs->perPage(), $monHocs->total()) }} 
-                của {{ $monHocs->total() }} kết quả
-            </div>
-            @endif
         </div>
+
+        {{-- Phân trang --}}
+        @if(method_exists($monHocs, 'hasPages') && $monHocs->hasPages())
+            <div class="p-3 border-top bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="text-muted small">
+                    Hiển thị <strong>{{ $monHocs->firstItem() }}</strong> - <strong>{{ $monHocs->lastItem() }}</strong> trên tổng <strong>{{ $monHocs->total() }}</strong> môn
+                </div>
+                <div>
+                    {{ $monHocs->links('pagination::bootstrap-5') }}
+                </div>
+            </div>
+        @endif
     </div>
 </div>
+
 <script>
-function confirmDelete() {
-    return confirm('Bạn chắc chắn muốn xóa môn học này?');
+function confirmDelete(name) {
+    return confirm(`Bạn có chắc chắn muốn xóa môn học "${name}" không?`);
 }
 </script>
 @endsection

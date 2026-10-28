@@ -1,349 +1,310 @@
 @extends('layouts.main-layout')
 
+@section('title', 'Lịch thi toàn trường')
+
 @section('content')
-<div class="container mt-4">
-   @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="container-fluid px-0">
+    {{-- Alerts --}}
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            <i class="fa-solid fa-circle-check fs-5"></i>
+            <div>{{ session('success') }}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
-     @if(session('error'))
-        <div class="alert alert-danger">
-            {{ session('error') }}
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <i class="fa-solid fa-circle-exclamation fs-5"></i>
+            <div>{{ session('error') }}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
-    <h2>Danh sách lịch thi</h2>
-    
-    @if(Auth::user()->vai_tro === 'admin')
-     <div class="mb-3 text-end">
-    <a href="{{ route('lichthi.create') }}" class="btn btn-success mb-3">+ Thêm mới</a>
+
+    {{-- Top Action Bar --}}
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1" style="color: var(--edu-text); font-size: 20px;">
+                <i class="fa-solid fa-calendar-days text-primary me-2"></i>Lịch Thi Toàn Trường
+            </h3>
+            <p class="text-muted small mb-0">Quản lý lịch tổ chức ca thi, phân công giám thị và danh sách sinh viên thi</p>
+        </div>
+        @if(Auth::user()->vai_tro === 'admin')
+        <div class="d-flex gap-2">
+            <a href="{{ route('lichthi.create') }}" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-plus"></i>
+                <span>Tạo Ca Thi Mới</span>
+            </a>
+        </div>
+        @endif
     </div>
-    @endif
-    {{-- Bộ lọc nâng cao --}}
-    <form method="GET" action="{{ route('lichthi.index') }}" class="mb-3">
-        <div class="row g-2">
-            <div class="col-md-2">
-                <input type="text" name="ma_sv" value="{{ request('ma_sv') }}" class="form-control" placeholder="MSSV">
-            </div>
-            <div class="col-md-2">
-                <input type="text" name="ten_mon" value="{{ request('ten_mon') }}" class="form-control" placeholder="Tên môn">
-            </div>
-            <div class="col-md-2">
-                <input type="text" name="phong" value="{{ request('phong') }}" class="form-control" placeholder="Phòng">
-            </div>
-            <div class="col-md-2">
-                <input type="date" name="ngay" value="{{ request('ngay') }}" class="form-control" placeholder="Ngày thi">
-            </div>
-            <!-- <div class="col-md-2">
-                <input type="time" name="gio" value="{{ request('gio') }}" class="form-control" placeholder="Giờ thi">
-            </div> -->
-            <div class="col-md-2">
-                <input type="text" name="ky_thi" value="{{ request('ky_thi') }}" class="form-control" placeholder="Kỳ thi">
-            </div>
-            <div class="col-md-2">
-                <input type="text" name="nam_hoc" value="{{ request('nam_hoc') }}" class="form-control" placeholder="Năm học">
-            </div>
-            <div class="col-md-2">
-                <select name="trang_thai" class="form-select">
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="chua_dien_ra" {{ request('trang_thai') == 'chua_dien_ra' ? 'selected' : '' }}>Chưa diễn ra</option>
-                    <option value="dang_dien_ra" {{ request('trang_thai') == 'dang_dien_ra' ? 'selected' : '' }}>Đang diễn ra</option>
-                    <option value="da_ket_thuc" {{ request('trang_thai') == 'da_ket_thuc' ? 'selected' : '' }}>Đã kết thúc</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <div class="d-flex gap-1">
-                    <button class="btn btn-primary w-50">Lọc</button>
-                    @if(count(request()->all()) > 0)
-                        <a href="{{ route('lichthi.index') }}" class="btn btn-outline-secondary w-50">Xóa</a>
-                    @endif
+
+    {{-- Bộ Lọc Nâng Cao (Filter Card) --}}
+    <div class="filter-card">
+        <form method="GET" action="{{ route('lichthi.index') }}">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Môn học</label>
+                    <input type="text" name="ten_mon" value="{{ request('ten_mon') }}" class="form-control" placeholder="Tên môn thi...">
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">MSSV</label>
+                    <input type="text" name="ma_sv" value="{{ request('ma_sv') }}" class="form-control" placeholder="Mã sinh viên...">
+                </div>
+                <div class="col-12 col-sm-6 col-md-2 col-lg-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Phòng thi</label>
+                    <input type="text" name="phong" value="{{ request('phong') }}" class="form-control" placeholder="Ví dụ: P101...">
+                </div>
+                <div class="col-12 col-sm-6 col-md-2 col-lg-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Ngày thi</label>
+                    <input type="date" name="ngay" value="{{ request('ngay') }}" class="form-control">
+                </div>
+                <div class="col-12 col-sm-6 col-md-2 col-lg-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Trạng thái ca thi</label>
+                    <select name="trang_thai" class="form-select">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="chua_dien_ra" {{ request('trang_thai') == 'chua_dien_ra' ? 'selected' : '' }}>Chưa diễn ra</option>
+                        <option value="dang_dien_ra" {{ request('trang_thai') == 'dang_dien_ra' ? 'selected' : '' }}>Đang diễn ra</option>
+                        <option value="da_ket_thuc" {{ request('trang_thai') == 'da_ket_thuc' ? 'selected' : '' }}>Đã kết thúc</option>
+                    </select>
+                </div>
+                <div class="col-12 col-sm-6 col-md-2 col-lg-2">
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-primary w-100" type="submit">
+                            <i class="fa-solid fa-filter me-1"></i> Lọc
+                        </button>
+                        @if(count(request()->all()) > 0)
+                            <a href="{{ route('lichthi.index') }}" class="btn btn-outline-secondary" title="Xóa bộ lọc">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </a>
+                        @endif
+                    </div>
                 </div>
             </div>
-        </div>
-    </form>
-    <br>
-    <table class="table table-bordered">
-        <thead class="table-dark">
-            <tr>
-                <th>Tên môn</th>
-                <th>Thời gian</th>
-                <th>Thời lượng (phút)</th>
-                <th>Phòng</th>
-                <th>Hành động</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($lichthis as $lt)
-            <tr>
-                <td>{{ $lt->monHoc->ten_mon }}</td>
-                <td>{{ $lt->thoi_gian_thi->format('d-m-Y H:i') }}</td>
-                <td>{{ $lt->thoi_luong_thi }}</td>
-                <td>{{ $lt->phong }}</td>
-                <td style="position: relative; min-width: 160px;">
-
-                    @if($lt->trang_thai === 'da_ket_thuc')
-                        <span class="badge bg-danger">Đã kết thúc</span>
-                    @elseif($lt->trang_thai === 'chua_dien_ra')
-                        <span class="badge bg-warning text-dark">Chưa diễn ra</span>
-                    @else
-                        <span class="badge bg-success">Đang diễn ra</span>
-                    @endif
-                     @if(Auth::user()->vai_tro === 'admin')
-                        <a href="{{ route('lichthi.phancong', $lt->id) }}" class="btn btn-info btn-sm">
-                                    Phân công
-                        </a>
-                        <div class="d-none d-md-block" style="position:absolute; right:30px; top:3px; text-align:right; font-size:12px; line-height:1.2;">
-                            <div>SL: {{ $lt->so_sinh_vien }} SV</div>
-                            <div>GV đã PC: {{ $lt->so_giang_vien }} GV</div>
-                        </div>
-                        
-                     @endif
-                    @if($lt->trang_thai === 'dang_dien_ra')
-                        @if(Auth::user()->vai_tro === 'admin')
-                        <a href="{{ route('lichthi.show', $lt->id) }}"
-                        class="btn btn-primary btn-sm viewSVBtn"
-                        style="position:absolute; right:3px; top:25px;
-                        padding:1px 4px; font-size:12px;
-                        width:20px; height:20px;
-                        display:flex; align-items:center; justify-content:center;">
-                            <i class="fa-solid fa-eye"></i>
-                        </a>
-                         <a href="{{ route('diemdanh.show', ['diemdanh' => $lt->id, 'type' => 'tientrinh']) }}" 
-                            class="btn btn-info btn-sm">
-                            📊 Xem tiến trình
-                            </a>
-                        @else
-                        <a href="{{ route('lichthi.show', $lt->id) }}"
-                        class="btn btn-primary btn-sm viewSVBtn"
-                        style="position:absolute; right:3px; top:20px;
-                        padding:1px 4px; font-size:12px;
-                        width:20px; height:20px;
-                        display:flex; align-items:center; justify-content:center;">
-                            <i class="fa-solid fa-eye"></i>
-                        </a>
-                        @endif
-                    @else
-                        @if(Auth::user()->vai_tro === 'admin')
-                            @if($lt->trang_thai == 'chua_dien_ra')
-                                    <form action="{{ route('lichthi.destroy', $lt->id) }}" method="POST" style="display:inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm"
-                                            onclick="return confirm('Xóa lịch thi này?')">Xóa</button>
-                                    </form>
-                            @endif
-                        @endif
-                        @if($lt->trang_thai === 'da_ket_thuc')
-                            @if(Auth::user()->vai_tro === 'admin')
-                            <a href="{{ route('lichthi.ketqua', $lt->id) }}?{{ http_build_query(request()->query()) }}" class="btn btn-info btn-sm">
-                                📊 Xem kết quả
-                            </a>
-                            <a href="{{ route('lichthi.show', $lt->id) }}"
-                            class="btn btn-primary btn-sm viewSVBtn"
-                            style="position:absolute; right:3px; top:25px;
-                            padding:1px 4px; font-size:12px;
-                            width:20px; height:20px;
-                            display:flex; align-items:center; justify-content:center;">
-                                <i class="fa-solid fa-eye"></i>
-                            </a>
-                            @else
-                            <a href="{{ route('lichthi.show', $lt->id) }}"
-                            class="btn btn-primary btn-sm viewSVBtn"
-                            style="position:absolute; right:3px; top:20px;
-                            padding:1px 4px; font-size:12px;
-                            width:20px; height:20px;
-                            display:flex; align-items:center; justify-content:center;">
-                                <i class="fa-solid fa-eye"></i>
-                            </a>
-                            @endif
-
-                        @else
-                            @if(Auth::user()->vai_tro === 'admin')
-
-                                <a href="{{ route('lichthi.edit', $lt->id) }}" class="btn btn-warning btn-sm">
-                                    Sửa
-                                </a>
-
-                                <button type="button"
-                                    class="btn btn-success btn-sm addSVBtn"
-                                    data-id="{{ $lt->id }}"
-                                    style="position:absolute; right:3px; top:3px;
-                                    padding:1px 4px; font-size:12px;
-                                    width:20px; height:20px;
-                                    display:flex; align-items:center; justify-content:center;">
-                                    <i class="fa-solid fa-plus"></i>
-                                </button>
-
-                                <a href="{{ route('lichthi.show', $lt->id) }}"
-                                class="btn btn-primary btn-sm viewSVBtn"
-                                style="position:absolute; right:3px; top:25px;
-                                padding:1px 4px; font-size:12px;
-                                width:20px; height:20px;
-                                display:flex; align-items:center; justify-content:center;">
-                                    <i class="fa-solid fa-eye"></i>
-                                </a>
-
-                            @else
-
-                                <a href="{{ route('lichthi.show', $lt->id) }}"
-                                class="btn btn-primary btn-sm viewSVBtn"
-                                style="position:absolute; right:3px; top:20px;
-                                padding:1px 4px; font-size:12px;
-                                width:20px; height:20px;
-                                display:flex; align-items:center; justify-content:center;">
-                                    <i class="fa-solid fa-eye"></i>
-                                </a>
-
-                            @endif
-                        @endif
-                    @endif
-
-                </td>
-
-            </tr>
-            @endforeach
-        </tbody>
-        {{-- @if(Auth::user()->vai_tro === 'admin')
-        <form action="{{ route('lichthi.import') }}" method="POST" enctype="multipart/form-data" class="mb-3">
-            @csrf
-            <input type="file" name="file" accept=".xlsx,.xls,.csv" required>
-            <button type="submit" class="btn btn-success">Import Excel</button>
         </form>
-        @endif  --}}
-    </table>
-
-    {{-- Hiển thị phân trang --}}
-    @if($lichthis->hasPages())
-    <div class="d-flex justify-content-center mt-4">
-        <nav aria-label="Page navigation">
-            <ul class="pagination pagination-sm mb-0">
-                {{-- Previous Page Link --}}
-                @if($lichthis->onFirstPage())
-                    <li class="page-item disabled">
-                        <span class="page-link">
-                            <i class="fas fa-chevron-left"></i>
-                        </span>
-                    </li>
-                @else
-                    <li class="page-item">
-                        <a class="page-link" href="{{ $lichthis->previousPageUrl() }}" aria-label="Previous">
-                            <i class="fas fa-chevron-left"></i>
-                        </a>
-                    </li>
-                @endif
-
-                {{-- Pagination Elements --}}
-                @php
-                    $current = $lichthis->currentPage();
-                    $last = $lichthis->lastPage();
-                    $start = max(1, $current - 2);
-                    $end = min($last, $current + 2);
-                @endphp
-
-                {{-- First Page Link --}}
-                @if($start > 1)
-                    <li class="page-item">
-                        <a class="page-link" href="{{ $lichthis->url(1) }}">1</a>
-                    </li>
-                    @if($start > 2)
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    @endif
-                @endif
-
-                {{-- Page Number Links --}}
-                @for($i = $start; $i <= $end; $i++)
-                    @if($i == $current)
-                        <li class="page-item active">
-                            <span class="page-link">{{ $i }}</span>
-                        </li>
-                    @else
-                        <li class="page-item">
-                            <a class="page-link" href="{{ $lichthis->url($i) }}">{{ $i }}</a>
-                        </li>
-                    @endif
-                @endfor
-
-                {{-- Last Page Link --}}
-                @if($end < $last)
-                    @if($end < $last - 1)
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    @endif
-                    <li class="page-item">
-                        <a class="page-link" href="{{ $lichthis->url($last) }}">{{ $last }}</a>
-                    </li>
-                @endif
-
-                {{-- Next Page Link --}}
-                @if($lichthis->hasMorePages())
-                    <li class="page-item">
-                        <a class="page-link" href="{{ $lichthis->nextPageUrl() }}" aria-label="Next">
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
-                    </li>
-                @else
-                    <li class="page-item disabled">
-                        <span class="page-link">
-                            <i class="fas fa-chevron-right"></i>
-                        </span>
-                    </li>
-                @endif
-            </ul>
-        </nav>
     </div>
 
-    {{-- Hiển thị thông tin kết quả --}}
-    <div class="text-center text-muted mt-2 small">
-        Hiển thị {{ ($lichthis->currentPage() - 1) * $lichthis->perPage() + 1 }} 
-        đến {{ min($lichthis->currentPage() * $lichthis->perPage(), $lichthis->total()) }} 
-        của {{ $lichthis->total() }} kết quả
+    {{-- Bảng Danh Sách Lịch Thi --}}
+    <div class="table-container shadow-sm">
+        <div class="table-responsive">
+            <table class="table-edu">
+                <thead>
+                    <tr>
+                        <th>Môn Thi / Học Phần</th>
+                        <th>Thời Gian Bắt Đầu</th>
+                        <th class="text-center">Thời Lượng</th>
+                        <th class="text-center">Phòng Thi</th>
+                        <th class="text-center">Trạng Thái</th>
+                        @if(Auth::user()->vai_tro === 'admin')
+                            <th class="text-center">Số Lượng</th>
+                        @endif
+                        <th class="text-center" style="min-width: 220px;">Thao Tác Quản Lý</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($lichthis as $lt)
+                    <tr>
+                        {{-- Môn học & Thông tin kỳ thi --}}
+                        <td>
+                            <div class="fw-bold text-dark">{{ $lt->monHoc->ten_mon ?? 'Chưa rõ môn' }}</div>
+                            <div class="small text-muted mt-1">
+                                <span class="badge bg-light text-secondary border me-1">{{ $lt->ky_thi ?? 'Thi kết thúc' }}</span>
+                                <span>{{ $lt->nam_hoc }}</span>
+                            </div>
+                        </td>
+
+                        {{-- Thời gian thi --}}
+                        <td>
+                            <div class="fw-semibold text-primary">
+                                <i class="fa-regular fa-calendar me-1"></i>{{ $lt->thoi_gian_thi->format('d/m/Y') }}
+                            </div>
+                            <div class="small text-muted mt-1">
+                                <i class="fa-regular fa-clock me-1"></i>{{ $lt->thoi_gian_thi->format('H:i') }}
+                            </div>
+                        </td>
+
+                        {{-- Thời lượng --}}
+                        <td class="text-center">
+                            <span class="edu-badge edu-badge-secondary">
+                                {{ $lt->thoi_luong_thi }} phút
+                            </span>
+                        </td>
+
+                        {{-- Phòng thi --}}
+                        <td class="text-center">
+                            <span class="edu-badge edu-badge-primary fw-bold fs-7">
+                                <i class="fa-solid fa-door-open me-1"></i>{{ $lt->phong }}
+                            </span>
+                        </td>
+
+                        {{-- Trạng thái --}}
+                        <td class="text-center">
+                            @if($lt->trang_thai === 'dang_dien_ra')
+                                <span class="edu-badge edu-badge-success">
+                                    <span class="pulse-dot"></span> Đang diễn ra
+                                </span>
+                            @elseif($lt->trang_thai === 'chua_dien_ra')
+                                <span class="edu-badge edu-badge-warning">
+                                    <i class="fa-regular fa-clock"></i> Chưa diễn ra
+                                </span>
+                            @else
+                                <span class="edu-badge edu-badge-secondary">
+                                    <i class="fa-solid fa-check"></i> Đã kết thúc
+                                </span>
+                            @endif
+                        </td>
+
+                        {{-- Thống kê SL (cho Admin) --}}
+                        @if(Auth::user()->vai_tro === 'admin')
+                        <td class="text-center small">
+                            <div><strong class="text-dark">{{ $lt->so_sinh_vien ?? $lt->diemDanhs()->count() }}</strong> SV</div>
+                            <div class="text-muted"><strong class="text-primary">{{ $lt->so_giang_vien ?? $lt->phanCongGVs()->count() }}</strong> Giám thị</div>
+                        </td>
+                        @endif
+
+                        {{-- Nhóm thao tác hành động --}}
+                        <td class="text-center">
+                            <div class="d-inline-flex flex-wrap gap-1 justify-content-center">
+                                {{-- Nút Xem danh sách sinh viên ca thi --}}
+                                <a href="{{ route('lichthi.show', $lt->id) }}" class="btn-action-soft btn-action-soft-primary" title="Xem danh sách sinh viên">
+                                    <i class="fa-solid fa-users"></i> Xem SV
+                                </a>
+
+                                @if(Auth::user()->vai_tro === 'admin')
+                                    {{-- Phân công cán bộ coi thi --}}
+                                    <a href="{{ route('lichthi.phancong', $lt->id) }}" class="btn-action-soft btn-action-soft-info" title="Phân công giảng viên">
+                                        <i class="fa-solid fa-user-check"></i> Phân công
+                                    </a>
+
+                                    {{-- Thêm sinh viên vào ca thi (khi chưa diễn ra) --}}
+                                    @if($lt->trang_thai === 'chua_dien_ra')
+                                        <button type="button" class="btn-action-soft btn-action-soft-primary addSVBtn" data-id="{{ $lt->id }}" title="Thêm sinh viên theo danh sách MSSV">
+                                            <i class="fa-solid fa-user-plus"></i> Thêm SV
+                                        </button>
+
+                                        <a href="{{ route('lichthi.edit', $lt->id) }}" class="btn-action-soft btn-action-soft-warning" title="Chỉnh sửa ca thi">
+                                            <i class="fa-solid fa-pen-to-square"></i> Sửa
+                                        </a>
+
+                                        <form action="{{ route('lichthi.destroy', $lt->id) }}" method="POST" class="d-inline m-0" onsubmit="return confirm('Bạn có chắc chắn muốn xóa lịch thi môn {{ $lt->monHoc->ten_mon ?? '' }} tại phòng {{ $lt->phong }}?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn-action-soft btn-action-soft-danger" title="Xóa lịch thi">
+                                                <i class="fa-solid fa-trash-can"></i> Xóa
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    {{-- Khi đang diễn ra: Xem tiến trình điểm danh --}}
+                                    @if($lt->trang_thai === 'dang_dien_ra')
+                                        <a href="{{ route('diemdanh.show', ['diemdanh' => $lt->id, 'type' => 'tientrinh']) }}" class="btn-action-soft btn-action-soft-info" title="Xem tiến trình điểm danh trực tiếp">
+                                            <i class="fa-solid fa-chart-pie"></i> Tiến trình
+                                        </a>
+                                    @endif
+
+                                    {{-- Khi đã kết thúc: Xem kết quả và xuất báo cáo --}}
+                                    @if($lt->trang_thai === 'da_ket_thuc')
+                                        <a href="{{ route('lichthi.ketqua', $lt->id) }}?{{ http_build_query(request()->query()) }}" class="btn-action-soft btn-action-soft-info" title="Xem kết quả điểm danh">
+                                            <i class="fa-solid fa-chart-column"></i> Kết quả
+                                        </a>
+                                        <a href="{{ route('lichthi.export', $lt->id) }}" class="btn-action-soft btn-action-soft-primary" title="Xuất Excel kết quả">
+                                            <i class="fa-solid fa-file-excel"></i> Xuất Excel
+                                        </a>
+                                    @endif
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="7" class="p-5 text-center">
+                            <div class="empty-state-card border-0 py-2">
+                                <i class="fa-solid fa-calendar-xmark mb-2"></i>
+                                <h4>Không tìm thấy ca thi nào</h4>
+                                <p class="text-muted mb-3">
+                                    @if(count(request()->all()) > 0)
+                                        Không có ca thi nào phù hợp với bộ lọc hiện tại. Thầy/Cô vui lòng thử xóa lọc hoặc tìm với từ khóa khác.
+                                    @else
+                                        Hiện tại trường học chưa có ca thi nào được tạo trên hệ thống.
+                                    @endif
+                                </p>
+                                @if(count(request()->all()) > 0)
+                                    <a href="{{ route('lichthi.index') }}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fa-solid fa-rotate-left me-1"></i> Xóa bộ lọc
+                                    </a>
+                                @elseif(Auth::user()->vai_tro === 'admin')
+                                    <a href="{{ route('lichthi.create') }}" class="btn btn-primary btn-sm">
+                                        <i class="fa-solid fa-plus me-1"></i> Tạo ca thi mới
+                                    </a>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Phân trang --}}
+        @if(method_exists($lichthis, 'hasPages') && $lichthis->hasPages())
+            <div class="p-3 border-top bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="text-muted small">
+                    Hiển thị <strong>{{ $lichthis->firstItem() }}</strong> - <strong>{{ $lichthis->lastItem() }}</strong> trên tổng <strong>{{ $lichthis->total() }}</strong> ca thi
+                </div>
+                <div>
+                    {{ $lichthis->links('pagination::bootstrap-5') }}
+                </div>
+            </div>
+        @endif
     </div>
-    @endif
 </div>
-    
-    <!-- Modal Thêm Sinh Viên -->
-    <div class="modal fade" id="addStudentsModal" tabindex="-1">
-        <div class="modal-dialog modal-md">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Thêm sinh viên vào ca thi</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
+<!-- Modal Thêm Sinh Viên Theo Danh Sách MSSV -->
+<div class="modal fade" id="addStudentsModal" tabindex="-1" aria-labelledby="addStudentsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header py-3 text-white" style="background: var(--edu-gradient);">
+                <h5 class="modal-title fw-bold" id="addStudentsModalLabel">
+                    <i class="fa-solid fa-user-plus me-2"></i>Thêm Sinh Viên Vào Ca Thi
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+
+            <div class="modal-body p-4 bg-light">
+                <input type="hidden" id="lichThiId">
+
+                <div class="alert alert-info py-2 small mb-3">
+                    <i class="fa-solid fa-circle-info me-1"></i>
+                    Nhập mỗi Mã số sinh viên (MSSV) trên <strong>1 dòng</strong>. Hệ thống sẽ tự động tra cứu họ tên và kiểm tra trùng lịch.
                 </div>
 
-                <div class="modal-body">
-                    <input type="hidden" id="lichThiId">
+                <div class="row g-3">
+                    <!-- Cột nhập MSSV -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-bold small text-muted">Danh sách MSSV (1 mã / dòng):</label>
+                        <textarea id="mssvInput" class="form-control" rows="10" placeholder="DH52000001&#10;DH52000002&#10;DH52000003..."></textarea>
+                    </div>
 
-                    <div class="row">
-                        <!-- Nhập mã số sinh viên -->
-                        <div class="col-6">
-                            <label class="form-label">Nhập MSSV:</label>
-                            <textarea id="mssvInput" class="form-control" rows="11"></textarea>
-                        </div>
-
-                        <!-- Danh sách tên hiển thị -->
-                        <div class="col-6">
-                            <label class="form-label">Tên sinh viên:</label>
-                            <div id="studentNames"
-                                    style="height: 275px; overflow-y: auto; border: 1px solid #ccc;
-                                    padding: 8px; border-radius: 5px;">
-                            </div>
+                    <!-- Cột xem trước danh sách tên -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label fw-bold small text-muted">Kết quả tra cứu sinh viên:</label>
+                        <div id="studentNames" class="bg-white border p-3 rounded" style="height: 250px; overflow-y: auto; font-size: 13px;">
+                            <span class="text-muted fst-italic">Nhập danh sách MSSV vào ô bên cạnh để hệ thống tìm kiếm thông tin...</span>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button class="btn btn-primary" id="addStudentsBtn">Thêm toàn bộ</button>
-                </div>
-
+            <div class="modal-footer bg-white border-top">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-primary px-4 fw-bold" id="addStudentsBtn">
+                    <i class="fa-solid fa-check me-1"></i> Xác Nhận Thêm Toàn Bộ
+                </button>
             </div>
         </div>
     </div>
 </div>
+
 <script>
 let selectedLichThiId = null;
 
@@ -354,15 +315,20 @@ document.querySelectorAll('.addSVBtn').forEach(btn => {
         document.getElementById('lichThiId').value = selectedLichThiId;
 
         document.getElementById('mssvInput').value = "";
-        document.getElementById('studentNames').innerHTML = "<i>Nhập MSSV để hiển thị...</i>";
+        document.getElementById('studentNames').innerHTML = '<span class="text-muted fst-italic">Nhập danh sách MSSV vào ô bên cạnh để hệ thống tìm kiếm thông tin...</span>';
 
         new bootstrap.Modal(document.getElementById('addStudentsModal')).show();
     });
 });
 
-// Hiển thị danh sách sinh viên khi nhập MSSV
+// Tra cứu danh sách sinh viên real-time khi gõ MSSV
 document.getElementById('mssvInput').addEventListener('input', function () {
     const mssvList = this.value.trim().split('\n').filter(x => x.trim() !== '');
+
+    if (mssvList.length === 0) {
+        document.getElementById('studentNames').innerHTML = '<span class="text-muted fst-italic">Nhập danh sách MSSV vào ô bên cạnh để hệ thống tìm kiếm thông tin...</span>';
+        return;
+    }
 
     fetch("{{ route('sinhvien.searchByList') }}", {
         method: "POST",
@@ -376,8 +342,23 @@ document.getElementById('mssvInput').addEventListener('input', function () {
     .then(res => res.json())
     .then(data => {
         let html = '';
-        data.forEach(sv => html += `<div><b>${sv.ma_sv}</b> – ${sv.ho_ten}</div>`);
-        document.getElementById('studentNames').innerHTML = html || "<i>Không tìm thấy sinh viên</i>";
+        if (data.length > 0) {
+            data.forEach((sv, idx) => {
+                html += `<div class="py-1 border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-primary-subtle text-primary border me-1">${sv.ma_sv}</span>
+                        <strong>${sv.ho_ten}</strong>
+                    </div>
+                    <span class="text-muted small">${sv.lop ?? ''}</span>
+                </div>`;
+            });
+        } else {
+            html = '<div class="text-danger py-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Không tìm thấy sinh viên nào khớp với danh sách MSSV trên.</div>';
+        }
+        document.getElementById('studentNames').innerHTML = html;
+    })
+    .catch(() => {
+        document.getElementById('studentNames').innerHTML = '<span class="text-danger">Lỗi kết nối khi tra cứu sinh viên.</span>';
     });
 });
 
@@ -389,64 +370,66 @@ document.getElementById('addStudentsBtn').addEventListener('click', async functi
                         .filter(x => x.trim() !== '');
 
     if (mssvList.length === 0) {
-        Swal.fire("Thiếu dữ liệu", "Bạn chưa nhập MSSV", "warning");
+        Swal.fire("Thiếu dữ liệu", "Thầy/Cô vui lòng nhập ít nhất 1 MSSV.", "warning");
         return;
     }
 
     const confirmResult = await Swal.fire({
-        title: "Xác nhận",
-        html: `Bạn có chắc muốn thêm <b>${mssvList.length}</b> sinh viên vào ca thi này?`,
+        title: "Xác nhận thêm sinh viên",
+        html: `Thầy/Cô có chắc chắn muốn thêm <b>${mssvList.length}</b> sinh viên vào ca thi này không?`,
         icon: "question",
         showCancelButton: true,
-        confirmButtonText: "Có, thêm ngay",
-        cancelButtonText: "Hủy"
+        confirmButtonText: "Thêm ngay",
+        cancelButtonText: "Xem lại"
     });
 
     if (!confirmResult.isConfirmed) return;
 
-    const res = await fetch(`/lichthi/${selectedLichThiId}/add-students`, {
-        method: "POST",
-        headers: { 
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "X-CSRF-TOKEN": "{{ csrf_token() }}"
-        },
-        body: JSON.stringify({ mssv: mssvList })
-    });
-
-    const data = await res.json();
-    const added = data.added || [];
-    const skipped = data.skipped || [];
-
-    if (!added.length && !skipped.length) {
-        Swal.fire("Thông báo", "Không có sinh viên hợp lệ để thêm.", "warning");
-        return;
-    }
-
-    const result = await Swal.fire({
-        title: "Kết quả thêm sinh viên",
-        html: `
-            ✅ Đã thêm <b>${added.length}</b> sinh viên.<br>
-            ⚠️ Bỏ qua <b>${skipped.length}</b> sinh viên.
-        `,
-        showCancelButton: skipped.length > 0,
-        confirmButtonText: "OK",
-        cancelButtonText: "Xem sinh viên bỏ qua",
-        icon: "success"
-    });
-
-    // Nếu bấm xem sinh viên bỏ qua thì đợi popup đó đóng
-    if (result.dismiss === Swal.DismissReason.cancel) {
-        await Swal.fire({
-            title: 'Sinh viên bị bỏ qua',
-            html: `<div style="text-align: left;">${skipped.join('<hr>')}</div>`,
-            icon: 'info',
-            confirmButtonText: 'OK'
+    try {
+        const res = await fetch(`/lichthi/${selectedLichThiId}/add-students`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+            },
+            body: JSON.stringify({ mssv: mssvList })
         });
+
+        const data = await res.json();
+        const added = data.added || [];
+        const skipped = data.skipped || [];
+
+        if (!added.length && !skipped.length) {
+            Swal.fire("Thông báo", "Không có sinh viên hợp lệ để thêm.", "warning");
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: "Kết quả thêm sinh viên",
+            html: `
+                <div class="text-success mb-2"><i class="fa-solid fa-circle-check"></i> Đã thêm thành công: <b>${added.length}</b> sinh viên.</div>
+                ${skipped.length > 0 ? `<div class="text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Bỏ qua: <b>${skipped.length}</b> sinh viên (đã có hoặc trùng ca).</div>` : ''}
+            `,
+            showCancelButton: skipped.length > 0,
+            confirmButtonText: "Hoàn tất",
+            cancelButtonText: "Xem chi tiết SV bỏ qua",
+            icon: "success"
+        });
+
+        if (result.dismiss === Swal.DismissReason.cancel) {
+            await Swal.fire({
+                title: 'Danh sách sinh viên bị bỏ qua',
+                html: `<div style="text-align: left; max-height: 300px; overflow-y: auto;" class="small">${skipped.join('<hr class="my-1">')}</div>`,
+                icon: 'info',
+                confirmButtonText: 'Đóng'
+            });
+        }
+
+        location.reload();
+    } catch (e) {
+        Swal.fire("Lỗi hệ thống", "Không thể gửi dữ liệu lên máy chủ.", "error");
     }
-
-    location.reload();
 });
-
 </script>
 @endsection

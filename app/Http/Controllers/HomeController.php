@@ -9,7 +9,7 @@ class HomeController extends Controller
 {
     public function index(Request $request)
     {
-        $user = Auth::user();
+        $user = Auth::guard('giangvien')->user() ?? Auth::user();
         LichThi::whereIn('trang_thai', ['chua_dien_ra', 'dang_dien_ra'])
             ->get()
             ->each(function ($lichThi) {

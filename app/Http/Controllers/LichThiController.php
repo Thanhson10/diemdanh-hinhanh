@@ -131,13 +131,9 @@ class LichThiController extends Controller
         }
 
         // Check trùng phòng
-       $trungPhong = LichThi::where('phong', $request->phong)
-        ->whereRaw(
-            "TIMESTAMP(ngay_thi, gio_thi) < ?
-             AND ADDTIME(TIMESTAMP(ngay_thi, gio_thi), SEC_TO_TIME(thoi_luong_thi * 60)) > ?",
-            [$ketThuc, $batDau]
-        )
-        ->exists();
+        $trungPhong = LichThi::where('phong', $request->phong)
+            ->overlappingWith($batDau, $ketThuc)
+            ->exists();
 
         if ($trungPhong) {
             return back()->withErrors([
@@ -198,10 +194,7 @@ class LichThiController extends Controller
         // 2. Check trùng phòng (loại trừ chính nó)
         $trungPhong = LichThi::where('phong', $request->phong)
             ->where('id', '<>', $lichthi->id)
-            ->where(function($q) use ($batDau, $ketThuc) {
-                $q->whereRaw("TIMESTAMP(ngay_thi, gio_thi) < ?", [$ketThuc])
-                ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL thoi_luong_thi MINUTE) > ?", [$batDau]);
-            })
+            ->overlappingWith($batDau, $ketThuc)
             ->exists();
         
         if ($trungPhong) {
@@ -215,11 +208,8 @@ class LichThiController extends Controller
         if ($giangVienIds->isNotEmpty()) {
             $lichTrungGV = PhanCongGV::whereIn('giang_vien_id', $giangVienIds)
                 ->whereHas('lichThi', function($q) use ($batDau, $ketThuc, $lichthi) {
-                    $q->where('id', '<>', $lichthi->id) // Bỏ qua lịch hiện tại đang sửa
-                    ->where(function($q2) use ($batDau, $ketThuc) {
-                        $q2->whereRaw("TIMESTAMP(ngay_thi, gio_thi) < ?", [$ketThuc])
-                        ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL thoi_luong_thi MINUTE) > ?", [$batDau]);
-                    });
+                    $q->where('id', '<>', $lichthi->id)
+                        ->overlappingWith($batDau, $ketThuc);
                 })
                 ->with(['lichThi.monHoc', 'giangVien'])
                 ->first();
@@ -239,10 +229,7 @@ class LichThiController extends Controller
             $trungLichSV = DiemDanh::whereIn('sinh_vien_id', $sinhVienIds)
                 ->whereHas('lichThi', function($q) use ($batDau, $ketThuc, $lichthi) {
                     $q->where('id', '<>', $lichthi->id)
-                    ->where(function($q2) use ($batDau, $ketThuc) {
-                        $q2->whereRaw("TIMESTAMP(ngay_thi, gio_thi) < ?", [$ketThuc])
-                        ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL thoi_luong_thi MINUTE) > ?", [$batDau]);
-                    });
+                        ->overlappingWith($batDau, $ketThuc);
                 })
                 ->with(['lichThi.monHoc', 'sinhVien'])
                 ->first(); 
@@ -345,10 +332,7 @@ class LichThiController extends Controller
         $lichTrung = PhanCongGV::where('giang_vien_id', $giangVienId)
         ->whereHas('lichThi', function($q) use ($batDau, $ketThuc, $lichThi) {
             $q->where('id', '<>', $lichThi->id)
-            ->where(function($q2) use ($batDau, $ketThuc) {
-                $q2->whereRaw("TIMESTAMP(ngay_thi, gio_thi) < ?", [$ketThuc])
-                    ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL thoi_luong_thi MINUTE) > ?", [$batDau]);
-            });
+                ->overlappingWith($batDau, $ketThuc);
         })
         ->with(['lichThi.monHoc', 'giangVien']) // lấy thông tin giảng viên
         ->first();
@@ -417,10 +401,7 @@ class LichThiController extends Controller
             $trungLich = DiemDanh::where('sinh_vien_id', $sv->id)
                 ->whereHas('lichThi', function ($q) use ($batDau, $ketThuc, $lichthi) {
                     $q->where('id', '<>', $lichthi->id)
-                    ->where(function($q2) use ($batDau, $ketThuc) {
-                        $q2->whereRaw("TIMESTAMP(ngay_thi, gio_thi) < ?", [$ketThuc])
-                            ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL thoi_luong_thi MINUTE) > ?", [$batDau]);
-                    });
+                        ->overlappingWith($batDau, $ketThuc);
                 })
                 ->with(['lichThi.monHoc'])
                 ->first();

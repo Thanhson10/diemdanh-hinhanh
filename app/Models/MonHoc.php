@@ -23,4 +23,9 @@ class MonHoc extends Model
     {
         return $this->hasMany(LichThi::class, 'mon_hoc_id');
     }
+
+    public function lichThi()
+    {
+        return $this->lichThis();
+    }
 }

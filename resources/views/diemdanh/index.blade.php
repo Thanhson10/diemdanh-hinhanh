@@ -1,180 +1,186 @@
 @extends('layouts.main-layout')
 
-@section('content')
-<div class="container mt-4">
-    <h2 class="mb-4">📅 Danh sách phòng thi</h2>
+@section('title', 'Phòng thi cá nhân của tôi')
 
-   {{-- Bộ lọc nâng cao --}}
-    <form method="GET" action="{{ route('diemdanh.index') }}" class="mb-3">
-        <div class="row g-2">
-            <div class="col-md-2">
-                <input type="text" name="ten_mon" value="{{ request('ten_mon') }}" class="form-control" placeholder="Tên môn">
-            </div>
-            <div class="col-md-2">
-                <input type="text" name="phong" value="{{ request('phong') }}" class="form-control" placeholder="Phòng">
-            </div>
-            <div class="col-md-2">
-                <input type="date" name="ngay" value="{{ request('ngay') }}" class="form-control" placeholder="Ngày thi">
-            </div>
-            <!-- <div class="col-md-2">
-                <input type="time" name="gio" value="{{ request('gio') }}" class="form-control" placeholder="Giờ thi">
-            </div> -->
-            <div class="col-md-2">
-                <input type="text" name="ky_thi" value="{{ request('ky_thi') }}" class="form-control" placeholder="Kỳ thi">
-            </div>
-            <div class="col-md-2">
-                <input type="text" name="nam_hoc" value="{{ request('nam_hoc') }}" class="form-control" placeholder="Năm học">
-            </div>
-            <div class="col-md-2">
-                <select name="trang_thai" class="form-select">
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="chua_dien_ra" {{ request('trang_thai') == 'chua_dien_ra' ? 'selected' : '' }}>Chưa diễn ra</option>
-                    <option value="dang_dien_ra" {{ request('trang_thai') == 'dang_dien_ra' ? 'selected' : '' }}>Đang diễn ra</option>
-                    <option value="da_ket_thuc" {{ request('trang_thai') == 'da_ket_thuc' ? 'selected' : '' }}>Đã kết thúc</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <div class="d-flex gap-1">
-                    <button class="btn btn-primary w-50">Lọc</button>
-                    @if(count(request()->all()) > 0)
-                        <a href="{{ route('diemdanh.index') }}" class="btn btn-outline-secondary w-50">Xóa</a>
-                    @endif
+@section('content')
+<div class="container-fluid px-0">
+    {{-- Alerts --}}
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            <i class="fa-solid fa-circle-check fs-5"></i>
+            <div>{{ session('success') }}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <i class="fa-solid fa-circle-exclamation fs-5"></i>
+            <div>{{ session('error') }}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    {{-- Top Title --}}
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+        <div>
+            <h3 class="fw-bold mb-1" style="color: var(--edu-text); font-size: 20px;">
+                <i class="fa-solid fa-clipboard-user text-primary me-2"></i>Danh Sách Phòng Thi Cá Nhân
+            </h3>
+            <p class="text-muted small mb-0">Các ca thi Thầy/Cô được phân công làm cán bộ coi thi & điểm danh</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('home.index') }}" class="btn btn-outline-primary d-inline-flex align-items-center gap-2">
+                <i class="fa-solid fa-house"></i>
+                <span>Màn hình chính</span>
+            </a>
+        </div>
+    </div>
+
+    {{-- Bộ Lọc Nâng Cao --}}
+    <div class="filter-card">
+        <form method="GET" action="{{ route('diemdanh.index') }}">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-sm-6 col-md-3 col-lg-3">
+                    <label class="form-label small fw-semibold text-muted mb-1">Môn thi</label>
+                    <input type="text" name="ten_mon" value="{{ request('ten_mon') }}" class="form-control" placeholder="Tên môn học...">
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Phòng thi</label>
+                    <input type="text" name="phong" value="{{ request('phong') }}" class="form-control" placeholder="Ví dụ: P101...">
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Ngày thi</label>
+                    <input type="date" name="ngay" value="{{ request('ngay') }}" class="form-control">
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label small fw-semibold text-muted mb-1">Trạng thái ca thi</label>
+                    <select name="trang_thai" class="form-select">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="chua_dien_ra" {{ request('trang_thai') == 'chua_dien_ra' ? 'selected' : '' }}>Chưa diễn ra</option>
+                        <option value="dang_dien_ra" {{ request('trang_thai') == 'dang_dien_ra' ? 'selected' : '' }}>Đang diễn ra</option>
+                        <option value="da_ket_thuc" {{ request('trang_thai') == 'da_ket_thuc' ? 'selected' : '' }}>Đã kết thúc</option>
+                    </select>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 col-lg-3">
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-primary w-100" type="submit">
+                            <i class="fa-solid fa-filter me-1"></i> Lọc ca thi
+                        </button>
+                        @if(count(request()->all()) > 0)
+                            <a href="{{ route('diemdanh.index') }}" class="btn btn-outline-secondary" title="Xóa bộ lọc">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </a>
+                        @endif
+                    </div>
                 </div>
             </div>
+        </form>
+    </div>
+
+    {{-- Bảng Phòng Thi Của Tôi --}}
+    <div class="table-container shadow-sm">
+        <div class="table-responsive">
+            <table class="table-edu">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width: 70px;">STT</th>
+                        <th>Học Phần / Môn Thi</th>
+                        <th>Thời Gian Bắt Đầu</th>
+                        <th class="text-center">Phòng Thi</th>
+                        <th class="text-center">Trạng Thái</th>
+                        <th class="text-center" style="width: 170px;">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($lichThis as $index => $lich)
+                        <tr>
+                            <td class="text-center text-muted fw-semibold">
+                                {{ method_exists($lichThis, 'firstItem') ? $lichThis->firstItem() + $index : $index + 1 }}
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ $lich->monHoc->ten_mon ?? 'Chưa rõ môn' }}</div>
+                                <div class="small text-muted mt-1">
+                                    <span class="badge bg-light text-secondary border me-1">{{ $lich->ky_thi ?? 'GK/CK' }}</span>
+                                    <span>Thời lượng: {{ $lich->thoi_luong_thi }} phút</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-primary">
+                                    <i class="fa-regular fa-calendar me-1"></i>{{ $lich->thoi_gian_thi->format('d/m/Y') }}
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="fa-regular fa-clock me-1"></i>{{ $lich->thoi_gian_thi->format('H:i') }}
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="edu-badge edu-badge-primary fw-bold fs-7">
+                                    <i class="fa-solid fa-door-open me-1"></i>{{ $lich->phong }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                @if($lich->trang_thai === 'dang_dien_ra')
+                                    <span class="edu-badge edu-badge-success">
+                                        <span class="pulse-dot"></span> Đang diễn ra
+                                    </span>
+                                @elseif($lich->trang_thai === 'chua_dien_ra')
+                                    <span class="edu-badge edu-badge-warning">
+                                        <i class="fa-regular fa-clock"></i> Chưa diễn ra
+                                    </span>
+                                @else
+                                    <span class="edu-badge edu-badge-secondary">
+                                        <i class="fa-solid fa-check"></i> Đã kết thúc
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ route('diemdanh.show', $lich->id) }}?{{ http_build_query(request()->query()) }}" class="btn-action-soft btn-action-soft-primary w-100 justify-content-center">
+                                    <i class="fa-solid fa-clipboard-check"></i>
+                                    <span>Vào phòng thi</span>
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="p-5 text-center">
+                                <div class="empty-state-card border-0 py-2">
+                                    <i class="fa-solid fa-calendar-xmark mb-2"></i>
+                                    <h4>Không có ca thi nào được phân công</h4>
+                                    <p class="text-muted mb-3">
+                                        @if(count(request()->all()) > 0)
+                                            Không tìm thấy ca thi nào khớp với bộ lọc tìm kiếm hiện tại.
+                                        @else
+                                            Thầy/Cô hiện chưa có lịch phân công coi thi nào trong đợt này.
+                                        @endif
+                                    </p>
+                                    @if(count(request()->all()) > 0)
+                                        <a href="{{ route('diemdanh.index') }}" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fa-solid fa-rotate-left me-1"></i> Xóa bộ lọc
+                                        </a>
+                                    @else
+                                        <a href="{{ route('lichthi.index') }}" class="btn btn-primary btn-sm">
+                                            <i class="fa-solid fa-calendar-days me-1"></i> Xem lịch thi chung toàn trường
+                                        </a>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-    </form>
 
-    {{-- Bảng danh sách --}}
-    <table class="table table-bordered table-striped align-middle">
-        <thead class="table-dark">
-            <tr>
-                <th>#</th>
-                <th>Tên môn</th>
-                <th>Ngày thi</th>
-                <th>Phòng</th>
-                <th>Trạng thái</th>
-                <th>Hành động</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($lichThis as $lich)
-                <tr>
-                    <td>{{ $loop->iteration + ($lichThis->currentPage() - 1) * $lichThis->perPage() }}</td>
-                    <td>{{ $lich->monHoc->ten_mon  }}</td>
-                    <td>{{ $lich->thoi_gian_thi->format('d/m/Y H:i') }}</td>
-                    <td>{{ $lich->phong }}</td>
-                    <td>
-                        @if($lich->trang_thai === 'da_ket_thuc')
-                            <span class="badge bg-secondary">Đã kết thúc</span>
-                        @elseif($lich->trang_thai === 'dang_dien_ra')
-                            <span class="badge bg-success">Đang diễn ra</span>
-                        @elseif($lich->trang_thai === 'chua_dien_ra')
-                            <span class="badge bg-warning text-dark">Chưa diễn ra</span>
-                        @endif
-                    </td>
-                    <td>
-                        <a href="{{ route('diemdanh.show', $lich->id) }}?{{ http_build_query(request()->query()) }}" class="btn btn-primary btn-sm">
-                            👁️ Xem sinh viên
-                        </a>
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="6" class="text-center text-muted">Không có lịch thi nào</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
-
-    {{-- Hiển thị phân trang --}}
-    @if($lichThis->hasPages())
-    <div class="d-flex justify-content-center mt-4">
-        <nav aria-label="Page navigation">
-            <ul class="pagination pagination-sm mb-0">
-                {{-- Previous Page Link --}}
-                @if($lichThis->onFirstPage())
-                    <li class="page-item disabled">
-                        <span class="page-link">
-                            <i class="fas fa-chevron-left"></i>
-                        </span>
-                    </li>
-                @else
-                    <li class="page-item">
-                        <a class="page-link" href="{{ $lichThis->previousPageUrl() }}" aria-label="Previous">
-                            <i class="fas fa-chevron-left"></i>
-                        </a>
-                    </li>
-                @endif
-
-                {{-- Pagination Elements --}}
-                @php
-                    $current = $lichThis->currentPage();
-                    $last = $lichThis->lastPage();
-                    $start = max(1, $current - 2);
-                    $end = min($last, $current + 2);
-                @endphp
-
-                {{-- First Page Link --}}
-                @if($start > 1)
-                    <li class="page-item">
-                        <a class="page-link" href="{{ $lichThis->url(1) }}">1</a>
-                    </li>
-                    @if($start > 2)
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    @endif
-                @endif
-
-                {{-- Page Number Links --}}
-                @for($i = $start; $i <= $end; $i++)
-                    @if($i == $current)
-                        <li class="page-item active">
-                            <span class="page-link">{{ $i }}</span>
-                        </li>
-                    @else
-                        <li class="page-item">
-                            <a class="page-link" href="{{ $lichThis->url($i) }}">{{ $i }}</a>
-                        </li>
-                    @endif
-                @endfor
-
-                {{-- Last Page Link --}}
-                @if($end < $last)
-                    @if($end < $last - 1)
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    @endif
-                    <li class="page-item">
-                        <a class="page-link" href="{{ $lichThis->url($last) }}">{{ $last }}</a>
-                    </li>
-                @endif
-
-                {{-- Next Page Link --}}
-                @if($lichThis->hasMorePages())
-                    <li class="page-item">
-                        <a class="page-link" href="{{ $lichThis->nextPageUrl() }}" aria-label="Next">
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
-                    </li>
-                @else
-                    <li class="page-item disabled">
-                        <span class="page-link">
-                            <i class="fas fa-chevron-right"></i>
-                        </span>
-                    </li>
-                @endif
-            </ul>
-        </nav>
+        {{-- Phân trang --}}
+        @if(method_exists($lichThis, 'hasPages') && $lichThis->hasPages())
+            <div class="p-3 border-top bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="text-muted small">
+                    Hiển thị <strong>{{ $lichThis->firstItem() }}</strong> - <strong>{{ $lichThis->lastItem() }}</strong> trên tổng <strong>{{ $lichThis->total() }}</strong> ca thi
+                </div>
+                <div>
+                    {{ $lichThis->links('pagination::bootstrap-5') }}
+                </div>
+            </div>
+        @endif
     </div>
-
-    {{-- Hiển thị thông tin kết quả --}}
-    <div class="text-center text-muted mt-2 small">
-        Hiển thị {{ ($lichThis->currentPage() - 1) * $lichThis->perPage() + 1 }} 
-        đến {{ min($lichThis->currentPage() * $lichThis->perPage(), $lichThis->total()) }} 
-        của {{ $lichThis->total() }} kết quả
-    </div>
-    @endif
 </div>
 @endsection

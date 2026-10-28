@@ -2,24 +2,22 @@
 
 namespace Database\Factories;
 
+use App\Models\SinhVien;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories.Factory<\App\Models\SinhVien>
- */
 class SinhVienFactory extends Factory
 {
+    protected $model = SinhVien::class;
+
     public function definition(): array
     {
-        static $count = 1;
-
         return [
-            'ma_sv' => 'SV' . str_pad($count++, 3, '0', STR_PAD_LEFT),
+            'ma_sv' => strtoupper($this->faker->unique()->bothify('??########')),
             'ho_ten' => $this->faker->name(),
             'lop' => 'CNTT' . $this->faker->numberBetween(1, 4),
             'email' => $this->faker->unique()->safeEmail(),
-            // Giả lập ảnh đại diện (sẽ thay bằng ảnh thật khi tích hợp AWS S3)
-            'hinh_anh' => $this->faker->imageUrl(200, 200, 'people', true, 'student'),
+            'do_chinh_xac_tb' => null,
+            'so_lan_nhan_dien' => 0,
         ];
     }
 }

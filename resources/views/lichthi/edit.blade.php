@@ -1,189 +1,281 @@
 @extends('layouts.main-layout')
 
 @section('content')
-<div class="container mt-4">
-    <h2>Sửa lịch thi</h2>
-    <a href="{{ route('lichthi.index') }}" class="btn btn-secondary">Trở lại</a>
-    <form action="{{ route('lichthi.update', $lichthi->id) }}" method="POST">
-        @csrf
-        @method('PUT')
-        <div class="mb-3">
-            <label>Môn học</label>
-            <select name="mon_hoc_id" class="select2" required style="width: 100%">
-                @foreach($monhocs as $mon)
-                    <option value="{{ $mon->id }}" {{ $lichthi->mon_hoc_id == $mon->id ? 'selected' : '' }}>
-                        {{ $mon->ten_mon }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label>Ngày thi</label>
-            <input type="date" name="ngay_thi" value="{{ $lichthi->ngay_thi }}" class="form-control" required>
-            @error('ngay_thi')
-                <div class="text-danger mt-1">{{ $message }}</div>
-            @enderror
-        </div>
-        <div class="mb-3">
-            <label>Giờ thi</label>
-            <input type="time" name="gio_thi" value="{{ $lichthi->gio_thi }}" min="07:00" max="18:00" class="form-control" required>
-            @error('gio_thi')
-                <div class="text-danger mt-1">{{ $message }}</div>
-            @enderror
-        </div>
-
-        <div class="mb-3 col-md-2">
-            <label>Thời lượng thi (phút)</label>
-            <input type="number" name="thoi_luong_thi" min="1" max="300" class="form-control" 
-                value="{{ $lichthi->thoi_luong_thi }}" required>
-            @error('thoi_luong_thi')
-                <div class="text-danger mt-1">{{ $message }}</div>
-            @enderror
-        </div>
-
-        @php
-            $phong = $lichthi->phong;   
-            $typeOld = substr($phong, 0, 1);
-            $n1Old = substr($phong, 1, 1);
-            $n2Old = substr($phong, 2, 1);
-            $n3Old = substr($phong, 3, 1);
-        @endphp
-
-        <div class="mb-3">
-            <label>Phòng</label>
-
-            <div class="row g-2">
-
-                <!-- Ký tự đầu: A / B / C -->
-                <div class="col-md-1">
-                    <select id="type" class="form-control" required>
-                        <option value="A" {{ $typeOld == 'A' ? 'selected' : '' }}>A</option>
-                        <option value="B" {{ $typeOld == 'B' ? 'selected' : '' }}>B</option>
-                        <option value="C" {{ $typeOld == 'C' ? 'selected' : '' }}>C</option>
-                    </select>
-                </div>
-
-                <!-- Số 1 -->
-                <div class="col-md-1">
-                    <select id="num1" class="form-control" required></select>
-                </div>
-
-                <!-- Số 2 -->
-                <div class="col-md-1">
-                    <select id="num2" class="form-control" required></select>
-                </div>
-
-                <!-- Số 3 -->
-                <div class="col-md-1">
-                    <select id="num3" class="form-control" required>
-                        @for ($i = 1; $i <= 9; $i++)
-                            <option value="{{ $i }}" {{ $n3Old == $i ? 'selected' : '' }}>
-                                {{ $i }}
-                            </option>
-                        @endfor
-                    </select>
-                </div>
-
+<div class="container-fluid px-3 py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-9 col-xl-8">
+            <!-- Breadcrumb Navigation -->
+            <div class="mb-3">
+                <a href="{{ route('lichthi.index') }}" class="btn btn-sm btn-edu btn-edu-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Quay lại lịch thi
+                </a>
             </div>
 
-            <input type="hidden" name="phong" id="phong">
+            <!-- Form Card -->
+            <div class="edu-card shadow-sm">
+                <div class="edu-card-header bg-white border-bottom p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 20px;">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold text-dark mb-1">Chỉnh Sửa Ca Thi</h4>
+                            <p class="text-muted small mb-0">Cập nhật thông tin ca thi: <strong class="text-primary">{{ $lichthi->monHoc->ten_mon }} - Phòng {{ $lichthi->phong }}</strong></p>
+                        </div>
+                    </div>
+                </div>
 
-            @error('phong')
-                <div class="text-danger mt-1">{{ $message }}</div>
-            @enderror
+                <div class="p-4">
+                    <form action="{{ route('lichthi.update', $lichthi->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        <!-- Section 1: Học phần -->
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="fas fa-book me-2"></i>1. Thông Tin Học Phần & Đợt Thi
+                        </h6>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-12">
+                                <label class="form-label small fw-semibold text-muted">
+                                    Môn thi học phần <span class="text-danger">*</span>
+                                </label>
+                                <select name="mon_hoc_id" class="select2 form-select" required style="width: 100%">
+                                    @foreach($monhocs as $mon)
+                                        <option value="{{ $mon->id }}" {{ $lichthi->mon_hoc_id == $mon->id ? 'selected' : '' }}>
+                                            {{ $mon->ma_mon }} - {{ $mon->ten_mon }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('mon_hoc_id')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-muted">
+                                    Đợt / Kỳ thi <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="fas fa-award"></i></span>
+                                    <input 
+                                        list="kythi_list" 
+                                        name="ky_thi" 
+                                        class="form-control" 
+                                        required
+                                        value="{{ old('ky_thi', $lichthi->ky_thi) }}"
+                                        placeholder="Nhập hoặc chọn kỳ thi...">
+                                </div>
+                                <datalist id="kythi_list">
+                                    <option value="Thi giữa kỳ HK1"></option>
+                                    <option value="Thi giữa kỳ HK2"></option>
+                                    <option value="Thi cuối kỳ HK1"></option>
+                                    <option value="Thi cuối kỳ HK2"></option>
+                                    <option value="Thi giữa kỳ HK3"></option>
+                                    <option value="Thi cuối kỳ HK3"></option>
+                                </datalist>
+                                @error('ky_thi')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold text-muted">
+                                    Năm học <span class="text-danger">*</span>
+                                </label>
+                                @php
+                                    $year = now()->year;
+                                    $options = [
+                                        ($year - 1).'-'.$year,
+                                        $year.'-'.($year + 1)
+                                    ];
+                                @endphp
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="fas fa-calendar-alt"></i></span>
+                                    <select name="nam_hoc" class="form-select" required>
+                                        @foreach($options as $opt)
+                                            <option 
+                                                value="{{ $opt }}"
+                                                {{ old('nam_hoc', $lichthi->nam_hoc) == $opt ? 'selected' : '' }}
+                                            >
+                                                {{ $opt }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                @error('nam_hoc')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Thời gian thi -->
+                        <h6 class="fw-bold text-primary mb-3 pt-3 border-top">
+                            <i class="far fa-clock me-2"></i>2. Thời Gian Tổ Chức Thi
+                        </h6>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-muted">
+                                    Ngày thi <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="far fa-calendar-check"></i></span>
+                                    <input type="date" name="ngay_thi" value="{{ old('ngay_thi', $lichthi->ngay_thi) }}" class="form-control" required>
+                                </div>
+                                @error('ngay_thi')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-muted">
+                                    Giờ thi <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="far fa-clock"></i></span>
+                                    <input type="time" name="gio_thi" value="{{ old('gio_thi', $lichthi->gio_thi) }}" min="07:00" max="18:00" class="form-control" required>
+                                </div>
+                                @error('gio_thi')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-muted">
+                                    Thời lượng thi (phút) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="fas fa-hourglass-half"></i></span>
+                                    <input type="number" name="thoi_luong_thi" min="1" max="300" class="form-control" 
+                                        value="{{ old('thoi_luong_thi', $lichthi->thoi_luong_thi) }}" required>
+                                </div>
+                                @error('thoi_luong_thi')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Phòng thi -->
+                        @php
+                            $phong = $lichthi->phong;   
+                            $typeOld = substr($phong, 0, 1);
+                            $n1Old = substr($phong, 1, 1);
+                            $n2Old = substr($phong, 2, 1);
+                            $n3Old = substr($phong, 3, 1);
+                        @endphp
+
+                        <h6 class="fw-bold text-primary mb-3 pt-3 border-top">
+                            <i class="fas fa-door-open me-2"></i>3. Phòng Thi & Khu Nhà
+                        </h6>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-semibold text-muted">
+                                Mã phòng thi <span class="text-danger">*</span>
+                            </label>
+                            <div class="row g-2 align-items-center">
+                                <div class="col-3 col-sm-2">
+                                    <select id="type" class="form-select" required>
+                                        <option value="A" {{ $typeOld == 'A' ? 'selected' : '' }}>Khu A</option>
+                                        <option value="B" {{ $typeOld == 'B' ? 'selected' : '' }}>Khu B</option>
+                                        <option value="C" {{ $typeOld == 'C' ? 'selected' : '' }}>Khu C</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-3 col-sm-2">
+                                    <select id="num1" class="form-select" required></select>
+                                </div>
+
+                                <div class="col-3 col-sm-2">
+                                    <select id="num2" class="form-select" required></select>
+                                </div>
+
+                                <div class="col-3 col-sm-2">
+                                    <select id="num3" class="form-select" required>
+                                        @for ($i = 1; $i <= 9; $i++)
+                                            <option value="{{ $i }}" {{ $n3Old == $i ? 'selected' : '' }}>
+                                                {{ $i }}
+                                            </option>
+                                        @endfor
+                                    </select>
+                                </div>
+
+                                <div class="col-12 col-sm-4 text-sm-start mt-2 mt-sm-0">
+                                    <span class="text-muted small">Mã phòng:</span>
+                                    <span id="previewPhongText" class="badge-edu badge-edu-primary font-monospace fs-6 ms-1">
+                                        {{ $lichthi->phong }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <input type="hidden" name="phong" id="phong" value="{{ $lichthi->phong }}">
+
+                            @error('phong')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a href="{{ route('lichthi.index') }}" class="btn btn-edu btn-edu-secondary">
+                                Hủy bỏ
+                            </a>
+                            <button type="submit" class="btn btn-edu btn-edu-primary px-4">
+                                <i class="fas fa-save me-1"></i> Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-
-
-        <script>
-            const type = document.getElementById('type');
-            const num1 = document.getElementById('num1');
-            const num2 = document.getElementById('num2');
-            const num3 = document.getElementById('num3');
-            const phong = document.getElementById('phong');
-
-            const oldN1 = "{{ $n1Old }}";
-            const oldN2 = "{{ $n2Old }}";
-
-            function loadDropdowns() {
-                num1.innerHTML = "";
-                num2.innerHTML = "";
-
-                if (type.value === "A" || type.value === "B") {
-                    // num1: 1-4
-                    for (let i = 1; i <= 4; i++) {
-                        num1.innerHTML += `<option value="${i}" ${i == oldN1 ? 'selected' : ''}>${i}</option>`;
-                    }
-                    // num2: 0-1
-                    for (let i = 0; i <= 1; i++) {
-                        num2.innerHTML += `<option value="${i}" ${i == oldN2 ? 'selected' : ''}>${i}</option>`;
-                    }
-                } else if (type.value === "C") {
-                    // num1: 1-9
-                    for (let i = 1; i <= 9; i++) {
-                        num1.innerHTML += `<option value="${i}" ${i == oldN1 ? 'selected' : ''}>${i}</option>`;
-                    }
-                    // num2: luôn là 0
-                    num2.innerHTML = `<option value="0" ${oldN2 == 0 ? 'selected' : ''}>0</option>`;
-                }
-
-                updateHidden();
-            }
-
-            function updateHidden() {
-                phong.value = type.value + num1.value + num2.value + num3.value;
-            }
-
-            type.onchange = loadDropdowns;
-            num1.onchange = updateHidden;
-            num2.onchange = updateHidden;
-            num3.onchange = updateHidden;
-
-            // Load dữ liệu có sẵn khi mở form
-            loadDropdowns();
-        </script>
-
-       <div class="mb-3">
-            <label>Kỳ thi</label>
-
-            <input 
-                list="kythi_list" 
-                name="ky_thi" 
-                class="form-control" 
-                required
-                value="{{ $lichthi->ky_thi }}"
-                placeholder="Nhập hoặc chọn kỳ thi..." required>
-
-            <datalist id="kythi_list">
-                <option value="Thi giữa kỳ HK1"></option>
-                <option value="Thi giữa kỳ HK2"></option>
-                <option value="Thi cuối kỳ HK1"></option>
-                <option value="Thi cuối kỳ HK2"></option>
-                <option value="Thi giữa kỳ HK3"></option>
-                <option value="Thi cuối kỳ HK3"></option>
-            </datalist>
-        </div>
-       <div class="mb-3">
-        <label>Năm học</label>
-            @php
-                $year = now()->year;
-                $options = [
-                    ($year - 1).'-'.$year,
-                    $year.'-'.($year + 1)
-                ];
-            @endphp
-            <select name="nam_hoc" value="{{ $lichthi->ky_thi }}" class="form-control" required>
-                @foreach($options as $opt)
-                    <option 
-                        value="{{ $opt }}"
-                        {{ old('nam_hoc', $lichthi->nam_hoc) == $opt ? 'selected' : '' }}
-                    >
-                        {{ $opt }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-        <button type="submit" class="btn btn-primary">Cập nhật</button>
-    </form>
+    </div>
 </div>
+
+<script>
+    const type = document.getElementById('type');
+    const num1 = document.getElementById('num1');
+    const num2 = document.getElementById('num2');
+    const num3 = document.getElementById('num3');
+    const phong = document.getElementById('phong');
+    const previewPhongText = document.getElementById('previewPhongText');
+
+    const oldN1 = "{{ $n1Old }}";
+    const oldN2 = "{{ $n2Old }}";
+
+    function loadDropdowns() {
+        num1.innerHTML = "";
+        num2.innerHTML = "";
+
+        if (type.value === "A" || type.value === "B") {
+            for (let i = 1; i <= 4; i++) {
+                num1.innerHTML += `<option value="${i}" ${i == oldN1 ? 'selected' : ''}>${i}</option>`;
+            }
+            for (let i = 0; i <= 1; i++) {
+                num2.innerHTML += `<option value="${i}" ${i == oldN2 ? 'selected' : ''}>${i}</option>`;
+            }
+        } else if (type.value === "C") {
+            for (let i = 1; i <= 9; i++) {
+                num1.innerHTML += `<option value="${i}" ${i == oldN1 ? 'selected' : ''}>${i}</option>`;
+            }
+            num2.innerHTML = `<option value="0" ${oldN2 == 0 ? 'selected' : ''}>0</option>`;
+        }
+
+        updateHidden();
+    }
+
+    function updateHidden() {
+        if (type.value && num1.value && num2.value && num3.value) {
+            const code = type.value + num1.value + num2.value + num3.value;
+            phong.value = code;
+            if (previewPhongText) previewPhongText.textContent = code;
+        }
+    }
+
+    type.onchange = loadDropdowns;
+    num1.onchange = updateHidden;
+    num2.onchange = updateHidden;
+    num3.onchange = updateHidden;
+
+    loadDropdowns();
+</script>
 @endsection
+

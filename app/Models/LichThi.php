@@ -102,4 +102,17 @@ class LichThi extends Model
         }
     }
 
+    public function scopeOverlappingWith($query, $batDau, $ketThuc)
+    {
+        $batDauStr = $batDau instanceof \Carbon\Carbon ? $batDau->format('Y-m-d H:i:s') : (string)$batDau;
+        $ketThucStr = $ketThuc instanceof \Carbon\Carbon ? $ketThuc->format('Y-m-d H:i:s') : (string)$ketThuc;
+
+        if (\Illuminate\Support\Facades\DB::connection()->getDriverName() === 'sqlite') {
+            return $query->whereRaw("datetime(ngay_thi || ' ' || gio_thi) < ?", [$ketThucStr])
+                ->whereRaw("datetime(ngay_thi || ' ' || gio_thi, '+' || thoi_luong_thi || ' minutes') > ?", [$batDauStr]);
+        }
+
+        return $query->whereRaw("TIMESTAMP(ngay_thi, gio_thi) < ?", [$ketThucStr])
+            ->whereRaw("TIMESTAMP(ngay_thi, gio_thi + INTERVAL thoi_luong_thi MINUTE) > ?", [$batDauStr]);
+    }
 }

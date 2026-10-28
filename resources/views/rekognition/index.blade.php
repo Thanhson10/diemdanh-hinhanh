@@ -1,113 +1,167 @@
 @extends('sinhvien.layout')
 
 @section('content')
-<div class="container mt-4 text-center">
+<div class="container-fluid px-3 py-2">
     <div id="alert-container" class="mt-2"></div>
-    <h3>📸 Điểm danh khuôn mặt</h3>
-    <a href="{{ route('diemdanh.show', $lichThi->id) }}" class="btn btn-secondary mt-2">Trở về</a>
-    <hr>
+
+    <!-- Exam Info Bar -->
+    <div class="edu-card mb-4" style="background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 4px solid var(--primary);">
+        <div class="p-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 20px;">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold text-dark mb-1">
+                        Điểm Danh AI Khuôn Mặt: {{ $lichThi->monHoc->ten_mon ?? 'N/A' }}
+                    </h5>
+                    <div class="d-flex flex-wrap align-items-center gap-2 text-muted small">
+                        <span>Phòng thi: <strong class="text-primary font-monospace">{{ $lichThi->phong }}</strong></span>
+                        <span>•</span>
+                        <span>Giờ thi: <strong class="text-dark">{{ substr($lichThi->gio_thi, 0, 5) }}</strong> ({{ \Carbon\Carbon::parse($lichThi->ngay_thi)->format('d/m/Y') }})</span>
+                        <span>•</span>
+                        @if($lichThi->trang_thai === 'dang_dien_ra')
+                            <span class="badge-edu badge-edu-success"><i class="fas fa-circle text-success me-1"></i>Đang diễn ra</span>
+                        @elseif($lichThi->trang_thai === 'chua_dien_ra')
+                            <span class="badge-edu badge-edu-warning">Chưa diễn ra</span>
+                        @else
+                            <span class="badge-edu badge-edu-danger">Đã kết thúc</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <a href="{{ route('diemdanh.show', $lichThi->id) }}" class="btn btn-edu btn-edu-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> Trở về phòng thi
+            </a>
+        </div>
+    </div>
 
     @if ($lichThi->trang_thai === 'chua_dien_ra')
-        <div class="alert alert-warning text-center">
-            ⏳ Chưa đến giờ thi – không thể điểm danh ngay lúc này.
+        <div class="alert alert-warning text-center p-4 edu-card border-0 shadow-sm">
+            <i class="fas fa-hourglass-start fa-2x text-warning mb-2"></i>
+            <h5 class="fw-bold mb-1">Chưa Đến Giờ Thi</h5>
+            <p class="text-muted small mb-0">Ca thi chưa bắt đầu. Cán bộ coi thi vui lòng quay lại khi đến giờ quy định.</p>
         </div>
     @elseif ($lichThi->trang_thai === 'da_ket_thuc')
-        <div class="alert alert-danger text-center">
-            ❌ Ca thi đã kết thúc – không thể tiếp tục điểm danh.
+        <div class="alert alert-danger text-center p-4 edu-card border-0 shadow-sm">
+            <i class="fas fa-lock fa-2x text-danger mb-2"></i>
+            <h5 class="fw-bold mb-1">Ca Thi Đã Kết Thúc</h5>
+            <p class="text-muted small mb-0">Ca thi đã đóng sổ điểm danh và kết thúc thời gian coi thi.</p>
         </div>
     @else
         <!-- Loading overlay -->
         <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none"
-            style="background: rgba(0,0,0,0.6); z-index: 9999;">
+            style="background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 9999;">
             <div class="d-flex flex-column justify-content-center align-items-center h-100">
-                <div class="spinner-border text-light" style="width: 4rem; height: 4rem;"></div>
-                <p class="mt-3 text-white fs-4">Đang xử lý, vui lòng chờ...</p>
+                <div class="spinner-border text-primary" style="width: 3.5rem; height: 3.5rem; border-width: 4px;"></div>
+                <p class="mt-3 text-white fw-bold fs-5">Đang xử lý nhận diện AI, vui lòng chờ...</p>
             </div>
         </div>
-        <div id="legendContainer" class="mb-3"></div>
-        <div class="row">
 
+        <div id="legendContainer" class="mb-3 text-center"></div>
+
+        <div class="row g-4 justify-content-center mb-5">
             <!-- Camera + live overlay -->
-            <div class="col-12 col-md-8 text-center mb-3">
-                <div id="cameraContainer" class="position-relative d-none" style="display:inline-block; max-width:100%;">
-                    <video id="camera" autoplay playsinline class="border rounded shadow-sm"
-                        style="max-width:100%; display:block;"></video>
+            <div class="col-12 col-md-8 text-center">
+                <div class="edu-card p-3 shadow-sm bg-dark d-inline-block w-100" style="max-width: 820px; border-radius: 16px; overflow: hidden;">
+                    <div id="cameraContainer" class="position-relative d-none w-100" style="display:inline-block; max-width:100%;">
+                        <video id="camera" autoplay playsinline class="rounded shadow-sm w-100"
+                            style="max-width:100%; display:block; object-fit: contain; background: #000;"></video>
 
-                    <canvas id="overlayLive"
-                            class="position-absolute top-0 start-0"
-                            style="pointer-events:none; left:0; top:0;"></canvas>
-                </div>
+                        <canvas id="overlayLive"
+                                class="position-absolute top-0 start-0 w-100 h-100"
+                                style="pointer-events:none; left:0; top:0;"></canvas>
+                    </div>
 
-                <!-- Snapshot (after chụp) -->
-                <div id="snapshotContainer" class="position-relative d-none" style="display:inline-block; max-width:100%;">
-                    <img id="capturedImage" class="img-fluid border rounded" style="display:block;">
-                    <canvas id="overlaySnapshot" class="position-absolute top-0 start-0" style="pointer-events:none; left:0; top:0;"></canvas>
+                    <!-- Snapshot (after chụp) -->
+                    <div id="snapshotContainer" class="position-relative d-none w-100" style="display:inline-block; max-width:100%;">
+                        <img id="capturedImage" class="img-fluid rounded w-100" style="display:block; object-fit: contain; background: #000;">
+                        <canvas id="overlaySnapshot" class="position-absolute top-0 start-0 w-100 h-100" style="pointer-events:none; left:0; top:0;"></canvas>
+                    </div>
                 </div>
 
                 <div class="mt-3 d-flex flex-wrap justify-content-center gap-2">
-                    <button id="btn-open-camera" class="btn btn-primary px-4 py-2">🎥 Mở Camera</button>
-                    <button id="btn-shot" class="btn btn-success px-4 py-2 d-none">📸 Chụp ảnh</button>
-                    <button id="btn-back" class="btn btn-secondary px-4 py-2 d-none">🔄 Chụp lại</button>
+                    <button id="btn-open-camera" class="btn btn-edu btn-edu-primary px-4 py-2">
+                        <i class="fas fa-video me-1"></i> Mở Camera
+                    </button>
+                    <button id="btn-shot" class="btn btn-edu btn-edu-success px-4 py-2 d-none">
+                        <i class="fas fa-camera me-1"></i> Chụp ảnh điểm danh
+                    </button>
+                    <button id="btn-back" class="btn btn-edu btn-edu-secondary px-4 py-2 d-none">
+                        <i class="fas fa-redo me-1"></i> Chụp lại
+                    </button>
                 </div>
             </div>
 
             <!-- Danh sách sinh viên (kết quả) -->
             <div class="col-12 col-md-4 d-none" id="studentsCol" style="max-height: 520px; overflow-y:auto;">
-                <form id="confirmForm">
-                    <div id="studentsList" class="list-group mb-2"></div>
-                    <button type="submit" id="btn-confirm" class="btn btn-primary btn-lg w-100">
-                        Xác nhận điểm danh
-                    </button>
-                </form>
+                <div class="edu-card p-3 shadow-sm">
+                    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                        <i class="fas fa-user-check text-primary me-2"></i>Khuôn mặt nhận diện được
+                    </h6>
+                    <form id="confirmForm">
+                        <div id="studentsList" class="list-group mb-3"></div>
+                        <button type="submit" id="btn-confirm" class="btn btn-edu btn-edu-primary btn-lg w-100">
+                            Xác nhận điểm danh
+                        </button>
+                    </form>
+                </div>
             </div>
-
         </div>
 
         <!-- DANH SÁCH SINH VIÊN ĐÃ ĐIỂM DANH -->
-        <div class="row mt-5">
+        <div class="row mt-4">
             <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-light">
-                        <h4 class="mb-0">🧾 Danh sách sinh viên</h4>
+                <div class="edu-card">
+                    <div class="edu-card-header bg-white border-bottom p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="fas fa-list-check text-primary me-2"></i>Danh Sách Thí Sinh Trong Phòng Thi
+                        </h5>
                     </div>
-                    <div class="card-body">
+                    <div class="p-3">
                         <!-- Thanh tìm kiếm -->
                         <form method="GET" action="{{ route('rekognition.index', $lichThi->id) }}" class="mb-3 d-flex align-items-center gap-2 flex-wrap">
-                            <input type="text" name="search" value="{{ request('search') }}" 
-                                class="form-control" placeholder="🔍 Tìm MSSV hoặc tên sinh viên"
-                                style="max-width: 300px;">
+                            <div class="input-group input-group-sm" style="max-width: 320px;">
+                                <span class="input-group-text bg-light text-muted"><i class="fas fa-search"></i></span>
+                                <input type="text" name="search" value="{{ request('search') }}" 
+                                    class="form-control" placeholder="Tìm MSSV hoặc tên thí sinh...">
+                            </div>
                             
-                            <div class="form-check">
+                            <div class="form-check form-switch mb-0 ms-2">
                                 <input class="form-check-input" type="checkbox" name="chua_diem_danh" value="1" id="chuaDiemDanh"
                                     {{ request('chua_diem_danh') == '1' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="chuaDiemDanh">Chưa điểm danh</label>
+                                <label class="form-check-label small fw-semibold text-muted" for="chuaDiemDanh">Chỉ xem chưa điểm danh</label>
                             </div>
 
-                            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                            <button type="submit" class="btn btn-sm btn-edu btn-edu-primary">Lọc</button>
                             
                             @if(request()->has('search') || request()->has('chua_diem_danh'))
-                                <a href="{{ route('rekognition.index', $lichThi->id) }}" class="btn btn-outline-secondary">Xóa lọc</a>
+                                <a href="{{ route('rekognition.index', $lichThi->id) }}" class="btn btn-sm btn-edu btn-edu-secondary">Xóa lọc</a>
                             @endif
                         </form>
 
                         @if ($sinhViens->isEmpty())
-                            <div class="alert alert-warning">Không có sinh viên nào.</div>
+                            <div class="empty-state">
+                                <i class="fas fa-user-graduate"></i>
+                                <h5>Không có thí sinh nào trong danh sách</h5>
+                            </div>
                         @else
                             <div class="table-responsive">
-                                <table class="table table-bordered table-hover align-middle text-center">
-                                    <thead class="table-light">
+                                <table class="table-edu align-middle text-center">
+                                    <thead>
                                         <tr>
-                                            <th>#</th>
-                                            <th>Ảnh</th>
-                                            <th>Mã SV</th>
-                                            <th>Họ tên</th>
+                                            <th style="width: 50px;">#</th>
+                                            <th style="width: 70px;">Ảnh</th>
+                                            <th>MSSV</th>
+                                            <th class="text-start">Họ và Tên</th>
                                             <th>Lớp</th>
-                                            <th>Điểm danh</th>
-                                            <th>Kết quả</th>
-                                            <th>Độ chính xác</th>
-                                            <th>Thời gian</th>
-                                            <th>Hình thức</th>
-                                            <th>Ghi chú</th>
+                                            <th>Trạng Thái</th>
+                                            <th>Kết Quả</th>
+                                            <th>Độ Chính Xác</th>
+                                            <th>Thời Gian</th>
+                                            <th>Hình Thức</th>
+                                            <th>Ghi Chú</th>
                                         </tr>
                                     </thead>
                                     <tbody id="attendanceTableBody">
@@ -115,44 +169,37 @@
                                             <tr data-id="{{ $item->id }}">
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td>
-                                                    <button class="btn btn-sm btn-info btn-xem-anh" 
-                                                        data-id="{{ $item->sinhVien->id }}">
-                                                        👁 Xem
+                                                    <button class="btn btn-sm btn-action btn-action-info btn-xem-anh" 
+                                                        data-id="{{ $item->sinhVien->id }}" title="Xem ảnh">
+                                                        <i class="far fa-image"></i>
                                                     </button>
                                                 </td>
-                                                <td>{{ $item->sinhVien->ma_sv }}</td>
-                                                <td>{{ $item->sinhVien->ho_ten }}</td>
-                                                <td>{{ $item->sinhVien->lop }}</td>
+                                                <td><span class="font-monospace fw-bold text-primary">{{ $item->sinhVien->ma_sv }}</span></td>
+                                                <td class="text-start fw-semibold text-dark">{{ $item->sinhVien->ho_ten }}</td>
+                                                <td><span class="badge-edu badge-edu-info">{{ $item->sinhVien->lop }}</span></td>
                                                 <td>
                                                     <input type="checkbox" class="form-check-input toggle-diemdanh"
                                                         data-id="{{ $item->id }}" {{ $item->ket_qua === 'hợp lệ' ? 'checked' : '' }}
                                                         @if($lichThi->trang_thai !== 'dang_dien_ra') disabled @endif>
                                                 </td>
-                                                <td class="col-ketqua">{{ $item->ket_qua ?? 'Chưa có' }}</td>
-                                                <td class="col-dochinhxac">{{ $item->do_chinh_xac ?? '-' }}</td>
-                                                <td class="col-thoigian">{{ $item->thoi_gian_dd ?? '-' }}</td>
-                                                <td class="col-hinhthuc">{{ $item->hinh_thuc_dd ?? '-' }}</td>
+                                                <td class="col-ketqua">
+                                                    @if($item->ket_qua === 'hợp lệ')
+                                                        <span class="badge-edu badge-edu-success">Hợp lệ</span>
+                                                    @elseif($item->ket_qua)
+                                                        <span class="badge-edu badge-edu-danger">{{ $item->ket_qua }}</span>
+                                                    @else
+                                                        <span class="text-muted small">Chưa có</span>
+                                                    @endif
+                                                </td>
+                                                <td class="col-dochinhxac font-monospace">{{ $item->do_chinh_xac ? $item->do_chinh_xac . '%' : '-' }}</td>
+                                                <td class="col-thoigian small text-muted">{{ $item->thoi_gian_dd ?? '-' }}</td>
+                                                <td class="col-hinhthuc small">{{ $item->hinh_thuc_dd ?? '-' }}</td>
                                                 <td>
                                                     <select class="form-select form-select-sm ghi-chu-select" 
-                                                        data-id="{{ $item->id }}" disabled>
-
-                                                        <option value="">-- Chọn --</option>
-
-                                                        <option value="chua_co_anh"
-                                                            {{ $item->ghi_chu == 'chua_co_anh' ? 'selected' : '' }}>
-                                                            Chưa có ảnh
-                                                        </option>
-
-                                                        <option value="mat_khong_khop"
-                                                            {{ $item->ghi_chu == 'mat_khong_khop' ? 'selected' : '' }}>
-                                                            Không nhận diện được
-                                                        </option>
-
-                                                        <!-- <option value="anh_mo"
-                                                            {{ $item->ghi_chu == 'anh_mo' ? 'selected' : '' }}>
-                                                            Ảnh mờ
-                                                        </option> -->
-
+                                                        data-id="{{ $item->id }}" disabled style="max-width: 170px;">
+                                                        <option value="">-- Ghi chú --</option>
+                                                        <option value="chua_co_anh" {{ $item->ghi_chu == 'chua_co_anh' ? 'selected' : '' }}>Chưa có ảnh</option>
+                                                        <option value="mat_khong_khop" {{ $item->ghi_chu == 'mat_khong_khop' ? 'selected' : '' }}>Không nhận diện được</option>
                                                     </select>
                                                 </td>
                                             </tr>
