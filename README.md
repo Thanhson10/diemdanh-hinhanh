@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🎓 Face Recognition Exam Attendance System
-### Hệ thống Điểm danh Phòng thi Thông minh bằng Nhận diện Khuôn mặt
+### Hệ thống Điểm danh Phòng thi bằng Nhận diện Khuôn mặt
 
 [![PHP Version](https://img.shields.io/badge/PHP-8.2%2B-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/)
 [![Laravel Version](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com/)
@@ -14,7 +14,7 @@
 
 <br/>
 
-[🌐 Xem Trực Tiếp Demo](https://sonnguyenhungthanh.io.vn) • [📋 Tính Năng](#-tính-năng-chính) • [🏗️ Kiến Trúc Hệ Thống](#%EF%B8%8F-kiến-trúc-hệ-thống--luồng-hoạt-động) • [🌟 Điểm Nổi Bật Kỹ Thuật](#-điểm-nổi-bật-về-mặt-kỹ-thuật) • [🧪 Kiểm Thử (Tests)](#-kiểm-thử-tự-động-automated-testing) • [⚙️ Cài Đặt](#%EF%B8%8F-hướng-dẫn-cài-đặt-local)
+[📋 Tính Năng](#-tính-năng-chính) • [🏗️ Kiến Trúc Hệ Thống](#%EF%B8%8F-kiến-trúc-hệ-thống--luồng-hoạt-động) • [🌟 Điểm Nổi Bật Kỹ Thuật](#-điểm-nổi-bật-về-mặt-kỹ-thuật) • [🧪 Kiểm Thử (Tests)](#-kiểm-thử-tự-động-automated-testing) • [⚙️ Cài Đặt](#%EF%B8%8F-hướng-dẫn-cài-đặt-local)
 
 </div>
 
@@ -25,7 +25,7 @@
 Trong các kỳ thi tập trung tại trường đại học, quy trình điểm danh truyền thống (gọi tên thủ công, đối chiếu thẻ sinh viên) thường mất từ **15 - 20 phút mỗi ca thi**, tiềm ẩn rủi ro **gian lận, thi hộ, hoặc sinh viên vào nhầm phòng thi**.
 
 **Face Recognition Attendance System** là giải pháp phần mềm toàn diện kết hợp **Laravel 12** và **hạ tầng Cloud Serverless của AWS (Rekognition, Lambda, S3)** nhằm:
-- ⚡ **Rút ngắn thời gian điểm danh**: Nhận diện đồng thời nhiều sinh viên trong một khung hình/ảnh chụp chỉ trong **dưới 1 giây**.
+- ⚡ **Rút ngắn thời gian điểm danh**: Nhận diện đồng thời nhiều sinh viên trong một khung hình/ảnh chụp chỉ trong **vài giây**.
 - 🛡️ **Ngăn chặn thi hộ & gian lận**: Độ tương đồng khuôn mặt được so khớp qua vector embedding trên AWS Rekognition với ngưỡng tin cậy cao (**Threshold >= 85%**).
 - 🔍 **Cảnh báo đi nhầm phòng thi theo thời gian thực**: Tự động tra cứu lịch thi trong ngày khi phát hiện sinh viên không thuộc danh sách phòng thi hiện tại.
 - ⏱️ **Tự động hóa quản trị phòng thi**: Chống trùng lịch phân công giám thị, tự động chuyển trạng thái "Vắng mặt" cho sinh viên khi kết thúc ca thi.
@@ -113,18 +113,6 @@ flowchart TD
 
 ---
 
-## 🌐 Demo Trực tuyến & Tài khoản Thử nghiệm
-
-Ứng dụng hiện đang được triển khai production tại:
-
-🔗 **URL Production**: [https://sonnguyenhungthanh.io.vn](https://sonnguyenhungthanh.io.vn)
-
-| Vai trò (Role) | Email đăng nhập | Mật khẩu mặc định | Quyền hạn chính |
-| :--- | :--- | :--- | :--- |
-| **Quản trị viên (Admin)** | `test@gmail.com` | `123123` | Quản lý SV/GV/Môn/Lịch thi, Phân công gác thi, Train ảnh khuôn mặt, Thống kê |
-| **Giảng viên / Giám thị** | `bb@gmail.com` | `111111` | Xem ca thi được phân công, Mở camera điểm danh phòng thi, Ghi chú & xuất kết quả |
-
----
 
 ## 🛠️ Công nghệ sử dụng (Tech Stack)
 
@@ -291,8 +279,7 @@ LAMBDA_DELETE_URL=https://your-api.amazonaws.com/delete
 php artisan migrate
 
 # Cách 2: Hoặc import file SQL có sẵn dữ liệu mẫu
-# File nằm tại: diemdanhsv_baove.sql hoặc huongdansudung/diemdanh_sv.sql
-mysql -u root -p diemdanh_sv < diemdanhsv_baove.sql
+# File nằm tại: diemdanhsv_baove.sql 
 ```
 
 **7. Tạo liên kết lưu trữ Storage:**
@@ -345,12 +332,8 @@ Truy cập hệ thống tại: `http://127.0.0.1:8000`
 **Nguyễn Hùng Thanh Sơn**  
 🎓 Sinh viên ngành Công nghệ Thông tin  
 💼 Định hướng: **Backend Developer / Full-stack PHP (Laravel) Engineer**  
-📧 Email: `thanhsonnguyen10@gmail.com` *(hoặc email liên hệ của bạn)*  
+📧 Email: `sonnguyenhungthanh@gmail.com`   
 🌐 GitHub: [github.com/Thanhson10](https://github.com/Thanhson10)  
 🔗 Website Demo: [https://sonnguyenhungthanh.io.vn](https://sonnguyenhungthanh.io.vn)
 
 ---
-
-<div align="center">
-⭐ Nếu bạn thấy dự án hữu ích hoặc thú vị, hãy tặng cho repository này 1 sao nhé! ⭐
-</div>
