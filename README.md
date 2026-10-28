@@ -32,7 +32,7 @@ Trong các kỳ thi tập trung tại trường đại học, quy trình điểm
 
 ---
 
-## 🌟 Điểm nổi bật về mặt Kỹ thuật (Technical Highlights)
+## 🌟 Điểm Nổi Bật Kỹ Thuật (Technical Highlights)
 
 Dự án được xây dựng theo chuẩn công nghiệp (Production-ready mindset) với các điểm sáng kỹ thuật:
 
@@ -129,7 +129,7 @@ flowchart TD
 
 ---
 
-## ⚡ Tính năng Chính (Features Breakdown)
+## 📋 Tính Năng Chính (Features Breakdown)
 
 ### 1. Phân hệ Quản trị viên (Admin)
 - **Quản lý dữ liệu học vụ**: Quản lý sinh viên, giảng viên, môn học, phòng thi, ca thi (CRUD hoàn chỉnh).
