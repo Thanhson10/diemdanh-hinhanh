@@ -14,7 +14,7 @@
 
 <br/>
 
-[📋 Tính Năng](#-tính-năng-chính) • [🏗️ Kiến Trúc Hệ Thống](#%EF%B8%8F-kiến-trúc-hệ-thống--luồng-hoạt-động) • [🌟 Điểm Nổi Bật Kỹ Thuật](#-điểm-nổi-bật-về-mặt-kỹ-thuật) • [🧪 Kiểm Thử (Tests)](#-kiểm-thử-tự-động-automated-testing) • [⚙️ Cài Đặt](#%EF%B8%8F-hướng-dẫn-cài-đặt-local)
+[📋 Tính Năng](#-tính-năng-chính-features-breakdown) • [🏗️ Kiến Trúc Hệ Thống](#%EF%B8%8F-kiến-trúc-hệ-thống--luồng-hoạt-động) • [🌟 Điểm Nổi Bật Kỹ Thuật](#-điểm-nổi-bật-về-mặt-kỹ-thuật-technical-highlights) • [🧪 Kiểm Thử (Tests)](#-kiểm-thử-tự-động-automated-testing) • [⚙️ Cài Đặt](#%EF%B8%8F-hướng-dẫn-cài-đặt-local-local-development)
 
 </div>
 
@@ -32,7 +32,7 @@ Trong các kỳ thi tập trung tại trường đại học, quy trình điểm
 
 ---
 
-## 🌟 Điểm Nổi Bật Kỹ Thuật (Technical Highlights)
+## 🌟 Điểm nổi bật về mặt Kỹ thuật (Technical Highlights)
 
 Dự án được xây dựng theo chuẩn công nghiệp (Production-ready mindset) với các điểm sáng kỹ thuật:
 
